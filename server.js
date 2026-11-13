@@ -231,17 +231,30 @@ app.get('/api/geocode/search', async (req, res) => {
     return res.json([]);
   }
 
-  const cleanQ = removeVietnameseTones(query);
+  // Tách số nhà nếu người dùng có gõ (ví dụ: "120 Nguyễn Văn Linh", "54/2 Nguyễn Lương Bằng", "Số 15 Lê Duẩn")
+  let cleanRaw = query.trim();
+  let housePrefix = '';
+  const houseMatch = cleanRaw.match(/^((?:số\s+)?\d+[\w\/\-\.]*)\s+(.*)$/i);
+  if (houseMatch) {
+    housePrefix = houseMatch[1];
+    cleanRaw = houseMatch[2];
+  }
+
+  const cleanQ = removeVietnameseTones(cleanRaw);
+  const fullCleanQ = removeVietnameseTones(query.trim());
   const results = [];
 
   // 1. Tìm trong từ điển Đà Nẵng trước (phản hồi tức thì <1ms, không bị chặn mạng)
   for (const loc of DA_NANG_LOCATIONS) {
     for (const kw of loc.keywords) {
-      if (removeVietnameseTones(kw).includes(cleanQ) || cleanQ.includes(removeVietnameseTones(kw))) {
-        if (!results.find(r => r.name === loc.name)) {
+      const cleanKw = removeVietnameseTones(kw);
+      if (cleanKw.includes(cleanQ) || cleanQ.includes(cleanKw) || fullCleanQ.includes(cleanKw)) {
+        const displayName = housePrefix ? `${housePrefix} ${loc.name.replace(/^đường\s+/i, '')}` : loc.name;
+        const shortName = housePrefix ? `${housePrefix} ${loc.name.split(',')[0].replace(/^đường\s+/i, '')}` : loc.name.split(',')[0];
+        if (!results.find(r => r.display_name === displayName)) {
           results.push({
-            display_name: loc.name,
-            name: loc.name.split(',')[0],
+            display_name: displayName,
+            name: shortName,
             lat: loc.lat,
             lon: loc.lng
           });

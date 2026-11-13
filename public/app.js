@@ -874,21 +874,40 @@ async function handleOrderModalMapClick(lat, lng) {
   setOrderModalEndMarker(lat, lng);
 
   const rInput = document.getElementById('order-receiver-address');
-  if (rInput) {
-    rInput.dataset.lat = lat;
-    rInput.dataset.lng = lng;
-    rInput.dataset.selectedAddress = `Vị trí ghim (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
-  }
+  if (!rInput) return;
 
-  // Tra cứu ngược địa chỉ (Reverse Geocode) để tự điền tên đường vào ô nhập
+  // Luôn ghi đè tọa độ mới nhất vào dataset
+  rInput.dataset.lat = lat;
+  rInput.dataset.lng = lng;
+
+  // Giữ lại số nhà nếu người dùng đã gõ trước đó
+  const currentVal = rInput.value.trim();
+  const houseMatch = currentVal.match(/^((?:số\s+)?\d+[\w\/\-\.]*)\s+/i);
+  const housePrefix = houseMatch ? houseMatch[1] : '';
+
+  // Đặt giá trị tạm thời đồng bộ cả value và selectedAddress
+  const tempAddr = housePrefix 
+    ? `${housePrefix} (Điểm ghim bản đồ: ${lat.toFixed(4)}, ${lng.toFixed(4)})`
+    : `Điểm ghim bản đồ (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+
+  rInput.value = tempAddr;
+  rInput.dataset.selectedAddress = tempAddr;
+
+  // Tự động đo ngay lập tức bằng tọa độ mới vừa click
+  await autoCalculateOrderDistance(true);
+
+  // Sau đó gọi reverse geocode để lấy tên đường chính xác
   try {
     const res = await fetch(`/api/geocode/reverse?lat=${lat}&lng=${lng}`);
     const data = await res.json();
     if (data.success && data.address) {
-      if (rInput) {
-        rInput.value = data.address;
-        rInput.dataset.selectedAddress = data.address;
+      let resolvedAddr = data.address;
+      if (housePrefix && !resolvedAddr.toLowerCase().startsWith(housePrefix.toLowerCase())) {
+        resolvedAddr = `${housePrefix} ${resolvedAddr.replace(/^đường\s+/i, '')}`;
       }
+      rInput.value = resolvedAddr;
+      rInput.dataset.selectedAddress = resolvedAddr;
+
       if (data.district) {
         const dSelect = document.getElementById('order-district');
         if (dSelect) {
@@ -904,9 +923,6 @@ async function handleOrderModalMapClick(lat, lng) {
   } catch (e) {
     console.error('Reverse geocode error:', e);
   }
-
-  // Tự động tính khoảng cách và cước
-  await autoCalculateOrderDistance(true);
 }
 
 function setOrderModalEndMarker(lat, lng) {
@@ -1108,14 +1124,22 @@ function selectModalAddress(type, address, lat, lon) {
   const input = document.getElementById(type === 'sender' ? 'order-sender-address' : 'order-receiver-address');
   const dropdown = document.getElementById(type === 'sender' ? 'suggest-sender' : 'suggest-receiver');
   if (input) {
-    input.value = address;
+    // Nếu người dùng đã gõ số nhà mà gợi ý chưa có số nhà đó, giữ lại số nhà
+    const currentVal = input.value.trim();
+    const houseMatch = currentVal.match(/^((?:số\s+)?\d+[\w\/\-\.]*)\s+/i);
+    let finalAddr = address;
+    if (houseMatch && !address.toLowerCase().startsWith(houseMatch[1].toLowerCase())) {
+      finalAddr = `${houseMatch[1]} ${address.replace(/^đường\s+/i, '')}`;
+    }
+
+    input.value = finalAddr;
     input.dataset.lat = lat;
     input.dataset.lng = lon;
-    input.dataset.selectedAddress = address;
+    input.dataset.selectedAddress = finalAddr;
   }
   if (dropdown) dropdown.classList.add('hidden');
 
-  autoCalculateOrderDistance();
+  autoCalculateOrderDistance(true);
 }
 
 async function autoCalculateOrderDistance(fromMapClick = false) {
@@ -1124,21 +1148,23 @@ async function autoCalculateOrderDistance(fromMapClick = false) {
   const sAddr = sInput ? sInput.value.trim() : '';
   const rAddr = rInput ? rInput.value.trim() : '';
 
-  if (!sAddr || !rAddr) return;
+  if (!sAddr && !fromMapClick) return;
 
   const distSelect = document.getElementById('order-district');
   const selectedDistrict = distSelect ? distSelect.value : '';
 
-  // Nếu người dùng đã gõ khác với gợi ý đã chọn, xóa tọa độ cũ
-  if (rInput && rInput.dataset.selectedAddress && rInput.dataset.selectedAddress !== rAddr) {
-    delete rInput.dataset.lat;
-    delete rInput.dataset.lng;
-    delete rInput.dataset.selectedAddress;
-  }
-  if (sInput && sInput.dataset.selectedAddress && sInput.dataset.selectedAddress !== sAddr) {
-    delete sInput.dataset.lat;
-    delete sInput.dataset.lng;
-    delete sInput.dataset.selectedAddress;
+  // CHỈ XÓA TỌA ĐỘ KHI NGƯỜI DÙNG TỰ GÕ BÀN PHÍM ĐỔI CHỮ (KHÔNG PHẢI CHỌN TRÊN BẢN ĐỒ HAY DROPDOWN)
+  if (!fromMapClick) {
+    if (rInput && rInput.dataset.selectedAddress && rInput.dataset.selectedAddress !== rAddr) {
+      delete rInput.dataset.lat;
+      delete rInput.dataset.lng;
+      delete rInput.dataset.selectedAddress;
+    }
+    if (sInput && sInput.dataset.selectedAddress && sInput.dataset.selectedAddress !== sAddr) {
+      delete sInput.dataset.lat;
+      delete sInput.dataset.lng;
+      delete sInput.dataset.selectedAddress;
+    }
   }
 
   const distEl = document.getElementById('order-distance-km');
@@ -1171,7 +1197,8 @@ async function autoCalculateOrderDistance(fromMapClick = false) {
       if (d.end_point && rInput) {
         rInput.dataset.lat = d.end_point.lat;
         rInput.dataset.lng = d.end_point.lng;
-        rInput.dataset.selectedAddress = rAddr;
+        // Đảm bảo selectedAddress đồng bộ với value
+        rInput.dataset.selectedAddress = rInput.value;
       }
 
       // Cập nhật lên bản đồ trong modal
