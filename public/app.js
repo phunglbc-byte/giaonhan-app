@@ -1986,6 +1986,29 @@ document.addEventListener('keydown', (e) => {
 });
 
 // =========================================================================
+// TOAST NOTIFICATION HELPER
+// =========================================================================
+function showToast(message, type = 'success') {
+  let toast = document.getElementById('app-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'app-toast';
+    toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl shadow-xl font-bold text-xs flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none transform -translate-y-2';
+    document.body.appendChild(toast);
+  }
+
+  const bgColor = type === 'error' ? 'bg-rose-600 text-white' : 'bg-slate-900/95 backdrop-blur-md text-white border border-slate-700';
+  const icon = type === 'error' ? '⚠️' : '🔔';
+  toast.className = `fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl shadow-xl font-bold text-xs flex items-center gap-2 transition-all duration-300 opacity-100 pointer-events-auto transform translate-y-0 ${bgColor}`;
+  toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(() => {
+    toast.className = toast.className.replace('opacity-100', 'opacity-0').replace('translate-y-0', '-translate-y-2');
+  }, 3500);
+}
+
+// =========================================================================
 // WEB PUSH NOTIFICATION & SOUND ENGINE (MÀN HÌNH KHÓA & CHUÔNG KHI TẮT MÁY)
 // =========================================================================
 
@@ -2061,16 +2084,16 @@ async function updateNotificationUI() {
   }
 }
 
-async function requestPushNotificationPermission() {
+async function requestPushNotificationPermission(isManual = false) {
   try {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      alert('Để nhận chuông báo trên iPhone: Vui lòng bấm biểu tượng Chia Sẻ (Share) ở Safari -> chọn "Thêm vào Màn hình chính", sau đó mở app từ icon màn hình chính.');
+      if (isManual) alert('Để nhận chuông báo trên iPhone: Vui lòng bấm biểu tượng Chia Sẻ (Share) ở Safari -> chọn "Thêm vào Màn hình chính", sau đó mở app từ icon màn hình chính.');
       return false;
     }
 
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-      alert('Vui lòng cấp quyền thông báo trong cài đặt để app tự động rung chuông khi có đơn mới!');
+      if (isManual) alert('Vui lòng cấp quyền thông báo trong cài đặt để app tự động rung chuông khi có đơn mới!');
       updateNotificationUI();
       return false;
     }
@@ -2108,14 +2131,18 @@ async function requestPushNotificationPermission() {
       })
     });
 
-    playOrderNotificationChime();
-    if ('vibrate' in navigator) navigator.vibrate([300, 100, 300]);
+    if (isManual) {
+      playOrderNotificationChime();
+      if ('vibrate' in navigator) navigator.vibrate([300, 100, 300]);
+      showToast('Đã kích hoạt thông báo màn hình khóa & chuông báo thành công!');
+    }
     updateNotificationUI();
-    showToast('Đã kích hoạt thông báo màn hình khóa & chuông báo thành công!');
     return true;
   } catch (err) {
-    console.error('Push registration error:', err);
-    alert('Lỗi đăng ký thông báo: ' + err.message);
+    console.warn('Push registration status:', err.message);
+    if (isManual) {
+      showToast('Lỗi đăng ký thông báo: ' + err.message, 'error');
+    }
     return false;
   }
 }
