@@ -25,8 +25,13 @@ const DA_NANG_LOCATIONS = [
   { keywords: ['hai phong', 'ga da nang', 'ga tau'], name: 'Ga Đà Nẵng, 200 Hải Phòng, Tam Thuận, Thanh Khê', lat: 16.0715, lng: 108.2131 },
   { keywords: ['le duan thanh khe', 'le duan'], name: 'Đường Lê Duẩn, Thanh Khê/Hải Châu, Đà Nẵng', lat: 16.0685, lng: 108.2162 },
   { keywords: ['hung vuong thanh khe', 'hung vuong'], name: 'Đường Hùng Vương, Thanh Khê, Đà Nẵng', lat: 16.0671, lng: 108.2138 },
-  { keywords: ['ong ich khiem thanh khe'], name: 'Đường Ông Ích Khiêm, Thanh Khê, Đà Nẵng', lat: 16.0652, lng: 108.2130 },
+  { keywords: ['ong ich khiem thanh khe', 'ong ich khiem'], name: 'Đường Ông Ích Khiêm, Thanh Khê, Đà Nẵng', lat: 16.0652, lng: 108.2130 },
   { keywords: ['hoang hoa tham'], name: 'Đường Hoàng Hoa Thám, Thanh Khê, Đà Nẵng', lat: 16.0691, lng: 108.2118 },
+  { keywords: ['thai thi boi'], name: 'Đường Thái Thị Bôi, Chính Gián, Thanh Khê', lat: 16.0645, lng: 108.1925 },
+  { keywords: ['le do'], name: 'Đường Lê Độ, Chính Gián, Thanh Khê', lat: 16.0675, lng: 108.2025 },
+  { keywords: ['nguyen tri phuong', 'ho thac gian'], name: 'Đường Nguyễn Tri Phương, Thanh Khê, Đà Nẵng', lat: 16.0585, lng: 108.2075 },
+  { keywords: ['huynh ngoc hue'], name: 'Đường Huỳnh Ngọc Huệ, An Khê, Thanh Khê', lat: 16.0595, lng: 108.1835 },
+  { keywords: ['me nhu'], name: 'Khu tượng đài Mẹ Nhu, Thanh Khê, Đà Nẵng', lat: 16.0642, lng: 108.1815 },
 
   // Quận Hải Châu
   { keywords: ['nguyen van linh', '120 nguyen van linh', 'ham chui nguyen van linh'], name: 'Đường Nguyễn Văn Linh, Hải Châu, Đà Nẵng', lat: 16.0612, lng: 108.2178 },

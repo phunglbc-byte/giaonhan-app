@@ -300,100 +300,164 @@ app.get('/api/geocode/search', async (req, res) => {
   res.json(results);
 });
 
-app.post('/api/route/calculate', async (req, res) => {
-  const { fromLat, fromLng, toLat, toLng, fromAddress, toAddress } = req.body;
+// Caches for lightning-fast repeated queries and rate-limit prevention
+const geocodeCache = new Map();
+const routeCache = new Map();
 
-  let startLat = parseFloat(fromLat);
-  let startLng = parseFloat(fromLng);
-  let endLat = parseFloat(toLat);
-  let endLng = parseFloat(toLng);
+async function resolveCoordinates(address, providedLat, providedLng) {
+  let lat = parseFloat(providedLat);
+  let lng = parseFloat(providedLng);
 
-  // 1. Tự động xác định tọa độ Điểm Lấy Hàng (A)
-  if (isNaN(startLat) || isNaN(startLng) || startLat === 0) {
-    if (!fromAddress || fromAddress.includes('29 Đặng Thai Mai') || fromAddress.includes('ROSI') || fromAddress.trim() === '') {
-      startLat = ROSI_HUB.lat;
-      startLng = ROSI_HUB.lng;
-    } else {
-      const matchA = matchDaNangLocation(fromAddress);
-      if (matchA) {
-        startLat = matchA.lat;
-        startLng = matchA.lng;
-      } else {
-        startLat = ROSI_HUB.lat;
-        startLng = ROSI_HUB.lng;
-      }
-    }
+  if (!isNaN(lat) && !isNaN(lng) && lat !== 0) {
+    return { lat, lng, source: 'provided' };
   }
 
-  // 2. Tự động xác định tọa độ Điểm Giao Hàng (B)
-  if (isNaN(endLat) || isNaN(endLng) || endLat === 0) {
-    if (!toAddress || toAddress.includes('29 Đặng Thai Mai') || toAddress.includes('ROSI')) {
-      endLat = ROSI_HUB.lat;
-      endLng = ROSI_HUB.lng;
-    } else {
-      const matchB = matchDaNangLocation(toAddress);
-      if (matchB) {
-        endLat = matchB.lat;
-        endLng = matchB.lng;
-      } else {
-        // Mặc định tâm Hải Châu / Cầu Rồng nếu địa chỉ chưa nhận dạng
-        endLat = 16.0611;
-        endLng = 108.2272;
-      }
-    }
+  if (!address || typeof address !== 'string' || address.trim() === '') {
+    return { lat: ROSI_HUB.lat, lng: ROSI_HUB.lng, source: 'hub_default' };
   }
 
-  let distanceKm = 0;
-  let durationMin = 0;
-  let coordinates = [];
+  const cleanAddr = address.trim();
+  const cleanQ = removeVietnameseTones(cleanAddr);
 
-  // 3. Thử gọi OSRM để tính lộ trình uốn lượn thực tế
+  // 1. Kiểm tra trụ sở ROSI
+  if (cleanQ.includes('dang thai mai') || cleanQ.includes('rosi') || cleanQ.includes('vinh trung') || cleanQ.includes('29 dang thai mai')) {
+    return { lat: ROSI_HUB.lat, lng: ROSI_HUB.lng, source: 'hub' };
+  }
+
+  // 2. Kiểm tra bộ nhớ đệm (Cache)
+  if (geocodeCache.has(cleanQ)) {
+    return geocodeCache.get(cleanQ);
+  }
+
+  // 3. Tra từ điển nội bộ Đà Nẵng
+  const match = matchDaNangLocation(cleanAddr);
+  if (match) {
+    const res = { lat: match.lat, lng: match.lng, source: 'dictionary' };
+    geocodeCache.set(cleanQ, res);
+    return res;
+  }
+
+  // 4. Tra cứu trực tuyến qua Nominatim (OpenStreetMap) với thời gian chờ ngắn
   try {
-    const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+    const qWithDaNang = cleanQ.includes('da nang') ? cleanAddr : `${cleanAddr}, Da Nang, Vietnam`;
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(qWithDaNang)}&countrycodes=vn&limit=1`;
     const ctrl = new AbortController();
-    const timeoutId = setTimeout(() => ctrl.abort(), 2500); // 2.5s timeout
-
-    const osrmRes = await fetch(osrmUrl, { signal: ctrl.signal });
-    clearTimeout(timeoutId);
-
-    if (osrmRes.ok) {
-      const routeData = await osrmRes.json();
-      if (routeData.code === 'Ok' && routeData.routes && routeData.routes.length > 0) {
-        const route = routeData.routes[0];
-        distanceKm = parseFloat((route.distance / 1000).toFixed(2));
-        durationMin = Math.max(3, Math.round(route.duration / 60));
-        coordinates = route.geometry.coordinates;
+    const timer = setTimeout(() => ctrl.abort(), 2000);
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'RosiDelivery/1.0' },
+      signal: ctrl.signal
+    });
+    clearTimeout(timer);
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.length > 0) {
+        const found = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), source: 'nominatim' };
+        geocodeCache.set(cleanQ, found);
+        return found;
       }
     }
-  } catch (osrmErr) {
-    // OSRM bận/timeout -> chuyển sang tính hình học đô thị
-  }
+  } catch (e) {}
 
-  // 4. Fallback: Tính khoảng cách đường bộ bằng Haversine x hệ số uốn lượn 1.28
-  if (!distanceKm || distanceKm <= 0) {
-    distanceKm = calculateHaversineKm(startLat, startLng, endLat, endLng);
-    if (distanceKm < 0.8) distanceKm = 1.2; // Tối thiểu trong nội ô
-    durationMin = Math.max(5, Math.round(distanceKm * 2.8));
-    coordinates = [
-      [startLng, startLat],
-      [endLng, endLat]
-    ];
-  }
-
-  const settings = getSettingsMap();
-  const shippingFee = calculateShippingFee(distanceKm, settings);
-
-  res.json({
-    success: true,
-    data: {
-      distance_km: distanceKm,
-      duration_minutes: durationMin,
-      shipping_fee: shippingFee,
-      start_point: { lat: startLat, lng: startLng },
-      end_point: { lat: endLat, lng: endLng },
-      route_coordinates: coordinates
+  // 5. Tra cứu dự phòng qua Photon API
+  try {
+    const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(cleanAddr)}&lat=16.06&lon=108.21&limit=1`;
+    const ctrl2 = new AbortController();
+    const timer2 = setTimeout(() => ctrl2.abort(), 2000);
+    const resp2 = await fetch(photonUrl, { signal: ctrl2.signal });
+    clearTimeout(timer2);
+    if (resp2.ok) {
+      const pData = await resp2.json();
+      if (pData.features && pData.features.length > 0) {
+        const coords = pData.features[0].geometry.coordinates; // [lon, lat]
+        const found = { lat: coords[1], lng: coords[0], source: 'photon' };
+        geocodeCache.set(cleanQ, found);
+        return found;
+      }
     }
-  });
+  } catch (e) {}
+
+  // 6. Định vị dự phòng theo quận/khu vực tại Đà Nẵng
+  const fallback = matchDaNangLocation(cleanAddr) || { lat: 16.0678, lng: 108.2208 };
+  const res = { lat: fallback.lat, lng: fallback.lng, source: 'fallback' };
+  geocodeCache.set(cleanQ, res);
+  return res;
+}
+
+app.post('/api/route/calculate', async (req, res) => {
+  try {
+    const { fromLat, fromLng, toLat, toLng, fromAddress, toAddress } = req.body;
+
+    const start = await resolveCoordinates(fromAddress, fromLat, fromLng);
+    const end = await resolveCoordinates(toAddress, toLat, toLng);
+
+    const startLat = start.lat;
+    const startLng = start.lng;
+    const endLat = end.lat;
+    const endLng = end.lng;
+
+    const cacheKey = `${startLat.toFixed(4)},${startLng.toFixed(4)}->${endLat.toFixed(4)},${endLng.toFixed(4)}`;
+    let routeInfo = routeCache.get(cacheKey);
+
+    if (!routeInfo) {
+      let distanceKm = 0;
+      let durationMin = 0;
+      let coordinates = [];
+
+      // Thử gọi OSRM để tính lộ trình uốn lượn thực tế
+      try {
+        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+        const ctrl = new AbortController();
+        const timeoutId = setTimeout(() => ctrl.abort(), 2500);
+
+        const osrmRes = await fetch(osrmUrl, { signal: ctrl.signal });
+        clearTimeout(timeoutId);
+
+        if (osrmRes.ok) {
+          const routeData = await osrmRes.json();
+          if (routeData.code === 'Ok' && routeData.routes && routeData.routes.length > 0) {
+            const route = routeData.routes[0];
+            distanceKm = parseFloat((route.distance / 1000).toFixed(2));
+            durationMin = Math.max(3, Math.round(route.duration / 60));
+            coordinates = route.geometry.coordinates;
+          }
+        }
+      } catch (osrmErr) {
+        // OSRM timeout / rate-limit -> chuyển sang tính hình học đô thị
+      }
+
+      // Fallback: Haversine nhân hệ số uốn lượn đô thị Đà Nẵng 1.30
+      if (!distanceKm || distanceKm <= 0) {
+        distanceKm = calculateHaversineKm(startLat, startLng, endLat, endLng);
+        if (distanceKm < 0.8) distanceKm = 1.0;
+        durationMin = Math.max(4, Math.round(distanceKm * 2.6));
+        coordinates = [
+          [startLng, startLat],
+          [endLng, endLat]
+        ];
+      }
+
+      routeInfo = { distanceKm, durationMin, coordinates };
+      routeCache.set(cacheKey, routeInfo);
+    }
+
+    const settings = getSettingsMap();
+    const shippingFee = calculateShippingFee(routeInfo.distanceKm, settings);
+
+    res.json({
+      success: true,
+      data: {
+        distance_km: routeInfo.distanceKm,
+        duration_minutes: routeInfo.durationMin,
+        shipping_fee: shippingFee,
+        start_point: { lat: startLat, lng: startLng, address: fromAddress },
+        end_point: { lat: endLat, lng: endLng, address: toAddress },
+        route_polyline: routeInfo.coordinates,
+        route_coordinates: routeInfo.coordinates
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // -----------------------------------------------------------------------------

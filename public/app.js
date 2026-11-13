@@ -651,8 +651,24 @@ function selectSearchedAddress(type, lat, lon, address) {
 }
 
 async function calculateRouteOnMap() {
-  const fromAddr = document.getElementById('calc-from-address').value.trim();
-  const toAddr = document.getElementById('calc-to-address').value.trim();
+  const fromInput = document.getElementById('calc-from-address');
+  const toInput = document.getElementById('calc-to-address');
+  const fromAddr = fromInput ? fromInput.value.trim() : '';
+  const toAddr = toInput ? toInput.value.trim() : '';
+
+  // Hủy tọa độ cũ nếu người dùng đã gõ địa chỉ mới
+  if (toInput && toInput.dataset.selectedAddress && toInput.dataset.selectedAddress !== toAddr) {
+    delete toInput.dataset.lat;
+    delete toInput.dataset.lng;
+    delete toInput.dataset.selectedAddress;
+    appState.calcData.end = null;
+  }
+  if (fromInput && fromInput.dataset.selectedAddress && fromInput.dataset.selectedAddress !== fromAddr) {
+    delete fromInput.dataset.lat;
+    delete fromInput.dataset.lng;
+    delete fromInput.dataset.selectedAddress;
+    appState.calcData.start = null;
+  }
 
   const payload = { fromAddress: fromAddr, toAddress: toAddr };
   if (appState.calcData.start) {
@@ -787,6 +803,24 @@ function setOrderModalDirection(dir) {
 function openCreateOrderModal() {
   populateShipperSelect('order-shipper-id');
   setOrderModalDirection('delivery');
+
+  // Xóa sạch dữ liệu địa chỉ và tọa độ cũ để lần tạo đơn mới đo chuẩn xác 100%
+  const recInput = document.getElementById('order-receiver-address');
+  if (recInput) {
+    recInput.value = '';
+    delete recInput.dataset.lat;
+    delete recInput.dataset.lng;
+    delete recInput.dataset.selectedAddress;
+  }
+  const distInput = document.getElementById('order-distance-km');
+  if (distInput) distInput.value = '';
+  const feeInput = document.getElementById('order-shipping-fee');
+  if (feeInput) feeInput.value = '';
+  const recName = document.getElementById('order-receiver-name');
+  if (recName) recName.value = '';
+  const recPhone = document.getElementById('order-receiver-phone');
+  if (recPhone) recPhone.value = '';
+
   document.getElementById('modal-create-order').classList.remove('hidden');
   lucide.createIcons();
 }
@@ -815,6 +849,16 @@ function debounceGeocode(input, type) {
   clearTimeout(debounceTimer);
   clearTimeout(calcDebounceTimer);
 
+  const rawQ = input.value.trim();
+
+  // NẾU NGƯỜI DÙNG THAY ĐỔI / GÕ LẠI ĐỊA CHỈ KHÁC:
+  // Hủy ngay tọa độ cũ đã lưu để không bị nhớ nhầm địa chỉ của lần thử trước!
+  if (input.dataset.selectedAddress && input.dataset.selectedAddress !== rawQ) {
+    delete input.dataset.lat;
+    delete input.dataset.lng;
+    delete input.dataset.selectedAddress;
+  }
+
   let dropdownId = 'suggest-sender';
   if (type === 'receiver') dropdownId = 'suggest-receiver';
   if (type === 'driver-quick') dropdownId = 'suggest-driver-quick';
@@ -822,9 +866,8 @@ function debounceGeocode(input, type) {
   if (type === 'calc-to') dropdownId = 'autocomplete-to';
 
   const dropdown = document.getElementById(dropdownId);
-  const rawQ = input.value.trim();
 
-  // Tự động tính toán km sau khi dừng gõ 500ms ngay cả khi người dùng không bấm vào dropdown
+  // Tự động tính toán km sau khi dừng gõ 450ms ngay cả khi người dùng không bấm vào dropdown
   calcDebounceTimer = setTimeout(() => {
     if (type === 'driver-quick') {
       autoCalculateDriverQuickOrder();
@@ -833,7 +876,7 @@ function debounceGeocode(input, type) {
     } else if (type === 'calc-to' || type === 'calc-from') {
       calculateRouteOnMap();
     }
-  }, 600);
+  }, 450);
 
   if (rawQ.length < 2) {
     if (dropdown) dropdown.classList.add('hidden');
@@ -882,6 +925,7 @@ function selectModalAddress(type, address, lat, lon) {
       input.value = address;
       input.dataset.lat = lat;
       input.dataset.lng = lon;
+      input.dataset.selectedAddress = address;
     }
     if (dropdown) dropdown.classList.add('hidden');
     autoCalculateDriverQuickOrder();
@@ -895,6 +939,7 @@ function selectModalAddress(type, address, lat, lon) {
       input.value = address;
       input.dataset.lat = lat;
       input.dataset.lng = lon;
+      input.dataset.selectedAddress = address;
     }
     if (dropdown) dropdown.classList.add('hidden');
     appState.calcData.start = { lat, lng: lon };
@@ -910,6 +955,7 @@ function selectModalAddress(type, address, lat, lon) {
       input.value = address;
       input.dataset.lat = lat;
       input.dataset.lng = lon;
+      input.dataset.selectedAddress = address;
     }
     if (dropdown) dropdown.classList.add('hidden');
     appState.calcData.end = { lat, lng: lon };
@@ -924,6 +970,7 @@ function selectModalAddress(type, address, lat, lon) {
     input.value = address;
     input.dataset.lat = lat;
     input.dataset.lng = lon;
+    input.dataset.selectedAddress = address;
   }
   if (dropdown) dropdown.classList.add('hidden');
 
@@ -937,6 +984,22 @@ async function autoCalculateOrderDistance() {
   const rAddr = rInput.value.trim();
 
   if (!sAddr || !rAddr) return;
+
+  // Nếu người dùng đã gõ khác với gợi ý đã chọn, xóa tọa độ cũ
+  if (rInput.dataset.selectedAddress && rInput.dataset.selectedAddress !== rAddr) {
+    delete rInput.dataset.lat;
+    delete rInput.dataset.lng;
+    delete rInput.dataset.selectedAddress;
+  }
+  if (sInput.dataset.selectedAddress && sInput.dataset.selectedAddress !== sAddr) {
+    delete sInput.dataset.lat;
+    delete sInput.dataset.lng;
+    delete sInput.dataset.selectedAddress;
+  }
+
+  const distEl = document.getElementById('order-distance-km');
+  const feeEl = document.getElementById('order-shipping-fee');
+  if (distEl && !distEl.value) distEl.placeholder = 'Đang tính...';
 
   const payload = {
     fromAddress: sAddr,
@@ -956,8 +1019,13 @@ async function autoCalculateOrderDistance() {
     const result = await res.json();
 
     if (result.success) {
-      document.getElementById('order-distance-km').value = result.data.distance_km;
-      document.getElementById('order-shipping-fee').value = result.data.shipping_fee;
+      if (distEl) distEl.value = result.data.distance_km;
+      if (feeEl) feeEl.value = result.data.shipping_fee;
+      if (result.data.end_point) {
+        rInput.dataset.lat = result.data.end_point.lat;
+        rInput.dataset.lng = result.data.end_point.lng;
+        rInput.dataset.selectedAddress = rAddr;
+      }
     }
   } catch (err) {
     console.error('Auto calculate error:', err);
@@ -1595,7 +1663,13 @@ function initDriverPortal(driver) {
 }
 
 function openDriverQuickOrderModal() {
-  document.getElementById('d-quick-address').value = '';
+  const dAddr = document.getElementById('d-quick-address');
+  if (dAddr) {
+    dAddr.value = '';
+    delete dAddr.dataset.lat;
+    delete dAddr.dataset.lng;
+    delete dAddr.dataset.selectedAddress;
+  }
   document.getElementById('d-quick-name').value = '';
   document.getElementById('d-quick-phone').value = '';
   document.getElementById('d-quick-cod').value = '0';
@@ -1635,6 +1709,13 @@ async function autoCalculateDriverQuickOrder() {
     document.getElementById('d-quick-dist').textContent = '-- km';
     document.getElementById('d-quick-earn').textContent = '-- đ';
     return;
+  }
+
+  // Nếu người dùng thay đổi địa chỉ khác với gợi ý đã lưu, xóa bỏ tọa độ cũ
+  if (addrInput.dataset.selectedAddress && addrInput.dataset.selectedAddress !== rawAddr) {
+    delete addrInput.dataset.lat;
+    delete addrInput.dataset.lng;
+    delete addrInput.dataset.selectedAddress;
   }
 
   const clientAddr = rawAddr.toLowerCase().includes('đà nẵng') || rawAddr.toLowerCase().includes('da nang') 
@@ -1684,6 +1765,16 @@ async function autoCalculateDriverQuickOrder() {
 
       document.getElementById('d-quick-dist').textContent = `${d.distance_km} km`;
       document.getElementById('d-quick-earn').textContent = formatVND(earning);
+
+      if (d.end_point && appState.driverTripMode === 'delivery') {
+        addrInput.dataset.lat = d.end_point.lat;
+        addrInput.dataset.lng = d.end_point.lng;
+        addrInput.dataset.selectedAddress = rawAddr;
+      } else if (d.start_point) {
+        addrInput.dataset.lat = d.start_point.lat;
+        addrInput.dataset.lng = d.start_point.lng;
+        addrInput.dataset.selectedAddress = rawAddr;
+      }
     }
   } catch (err) {
     console.error('Driver quick calc error:', err);
