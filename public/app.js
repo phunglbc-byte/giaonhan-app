@@ -804,6 +804,10 @@ function openCreateOrderModal() {
   populateShipperSelect('order-shipper-id');
   setOrderModalDirection('delivery');
 
+  // Reset dropdown quận huyện
+  const distSelect = document.getElementById('order-district');
+  if (distSelect) distSelect.selectedIndex = 0;
+
   // Xóa sạch dữ liệu địa chỉ và tọa độ cũ để lần tạo đơn mới đo chuẩn xác 100%
   const recInput = document.getElementById('order-receiver-address');
   if (recInput) {
@@ -821,8 +825,138 @@ function openCreateOrderModal() {
   const recPhone = document.getElementById('order-receiver-phone');
   if (recPhone) recPhone.value = '';
 
+  // Reset bản đồ trong modal
+  if (appState.orderModalEndMarker && appState.orderModalMap) {
+    appState.orderModalMap.removeLayer(appState.orderModalEndMarker);
+    appState.orderModalEndMarker = null;
+  }
+  if (appState.orderModalPolyline && appState.orderModalMap) {
+    appState.orderModalMap.removeLayer(appState.orderModalPolyline);
+    appState.orderModalPolyline = null;
+  }
+  const badge = document.getElementById('modal-map-distance-tag');
+  if (badge) badge.classList.add('hidden');
+
   document.getElementById('modal-create-order').classList.remove('hidden');
   lucide.createIcons();
+}
+
+// BẢN ĐỒ LỘ TRÌNH VÀ GHIM ĐIỂM ĐẾN TRONG MODAL TẠO ĐƠN
+function initOrderModalMap() {
+  const mapEl = document.getElementById('order-modal-map');
+  if (!mapEl) return;
+
+  if (appState.orderModalMap) {
+    appState.orderModalMap.invalidateSize();
+    return;
+  }
+
+  // Tọa độ trung tâm: 29 Đặng Thai Mai, ROSI
+  appState.orderModalMap = L.map('order-modal-map').setView([ROSI_HUB.lat, ROSI_HUB.lng], 13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(appState.orderModalMap);
+
+  // Điểm A: Trụ sở ROSI (29 Đặng Thai Mai)
+  appState.orderModalStartMarker = L.marker([ROSI_HUB.lat, ROSI_HUB.lng], {
+    icon: createPinIcon('start', 'A')
+  }).addTo(appState.orderModalMap).bindPopup('<b>CÔNG TY TNHH ROSI VIỆT NAM</b><br>29 Đặng Thai Mai, Thanh Khê');
+
+  // Sự kiện chạm/click lên bản đồ để ghim điểm đến
+  appState.orderModalMap.on('click', async (e) => {
+    await handleOrderModalMapClick(e.latlng.lat, e.latlng.lng);
+  });
+}
+
+async function handleOrderModalMapClick(lat, lng) {
+  setOrderModalEndMarker(lat, lng);
+
+  const rInput = document.getElementById('order-receiver-address');
+  if (rInput) {
+    rInput.dataset.lat = lat;
+    rInput.dataset.lng = lng;
+    rInput.dataset.selectedAddress = `Vị trí ghim (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+  }
+
+  // Tra cứu ngược địa chỉ (Reverse Geocode) để tự điền tên đường vào ô nhập
+  try {
+    const res = await fetch(`/api/geocode/reverse?lat=${lat}&lng=${lng}`);
+    const data = await res.json();
+    if (data.success && data.address) {
+      if (rInput) {
+        rInput.value = data.address;
+        rInput.dataset.selectedAddress = data.address;
+      }
+      if (data.district) {
+        const dSelect = document.getElementById('order-district');
+        if (dSelect) {
+          for (let i = 0; i < dSelect.options.length; i++) {
+            if (dSelect.options[i].value && data.district.toLowerCase().includes(dSelect.options[i].value.toLowerCase())) {
+              dSelect.selectedIndex = i;
+              break;
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Reverse geocode error:', e);
+  }
+
+  // Tự động tính khoảng cách và cước
+  await autoCalculateOrderDistance(true);
+}
+
+function setOrderModalEndMarker(lat, lng) {
+  if (!appState.orderModalMap) return;
+
+  if (appState.orderModalEndMarker) {
+    appState.orderModalEndMarker.setLatLng([lat, lng]);
+  } else {
+    appState.orderModalEndMarker = L.marker([lat, lng], {
+      icon: createPinIcon('end', 'B'),
+      draggable: true
+    }).addTo(appState.orderModalMap);
+
+    appState.orderModalEndMarker.on('dragend', async (e) => {
+      const pos = e.target.getLatLng();
+      await handleOrderModalMapClick(pos.lat, pos.lng);
+    });
+  }
+}
+
+function toggleOrderModalMap() {
+  const container = document.getElementById('order-modal-map-container');
+  const txt = document.getElementById('txt-toggle-modal-map');
+  if (!container) return;
+
+  if (container.classList.contains('hidden')) {
+    container.classList.remove('hidden');
+    if (txt) txt.textContent = 'Thu gọn bản đồ ✕';
+    setTimeout(() => {
+      initOrderModalMap();
+      appState.orderModalMap.invalidateSize();
+      const rInput = document.getElementById('order-receiver-address');
+      if (rInput && rInput.dataset.lat && rInput.dataset.lng) {
+        setOrderModalEndMarker(parseFloat(rInput.dataset.lat), parseFloat(rInput.dataset.lng));
+      }
+    }, 150);
+  } else {
+    container.classList.add('hidden');
+    if (txt) txt.textContent = 'Mở bản đồ kiểm tra';
+  }
+}
+
+function onOrderDistrictChange() {
+  const rInput = document.getElementById('order-receiver-address');
+  if (rInput && rInput.value.trim().length >= 2) {
+    delete rInput.dataset.lat;
+    delete rInput.dataset.lng;
+    delete rInput.dataset.selectedAddress;
+    autoCalculateOrderDistance();
+  }
 }
 
 function populateShipperSelect(selectId, selectedId = null) {
@@ -883,9 +1017,16 @@ function debounceGeocode(input, type) {
     return;
   }
 
-  const q = rawQ.toLowerCase().includes('đà nẵng') || rawQ.toLowerCase().includes('da nang') 
-    ? rawQ 
-    : `${rawQ}, Đà Nẵng`;
+  let q = rawQ;
+  const distSelect = document.getElementById('order-district');
+  const distVal = distSelect ? distSelect.value : '';
+  if (type === 'receiver' && distVal && !q.toLowerCase().includes(distVal.toLowerCase())) {
+    q = `${q}, Quận ${distVal}`;
+  }
+
+  q = q.toLowerCase().includes('đà nẵng') || q.toLowerCase().includes('da nang') 
+    ? q 
+    : `${q}, Đà Nẵng`;
 
   debounceTimer = setTimeout(async () => {
     try {
@@ -977,21 +1118,24 @@ function selectModalAddress(type, address, lat, lon) {
   autoCalculateOrderDistance();
 }
 
-async function autoCalculateOrderDistance() {
+async function autoCalculateOrderDistance(fromMapClick = false) {
   const sInput = document.getElementById('order-sender-address');
   const rInput = document.getElementById('order-receiver-address');
-  const sAddr = sInput.value.trim();
-  const rAddr = rInput.value.trim();
+  const sAddr = sInput ? sInput.value.trim() : '';
+  const rAddr = rInput ? rInput.value.trim() : '';
 
   if (!sAddr || !rAddr) return;
 
+  const distSelect = document.getElementById('order-district');
+  const selectedDistrict = distSelect ? distSelect.value : '';
+
   // Nếu người dùng đã gõ khác với gợi ý đã chọn, xóa tọa độ cũ
-  if (rInput.dataset.selectedAddress && rInput.dataset.selectedAddress !== rAddr) {
+  if (rInput && rInput.dataset.selectedAddress && rInput.dataset.selectedAddress !== rAddr) {
     delete rInput.dataset.lat;
     delete rInput.dataset.lng;
     delete rInput.dataset.selectedAddress;
   }
-  if (sInput.dataset.selectedAddress && sInput.dataset.selectedAddress !== sAddr) {
+  if (sInput && sInput.dataset.selectedAddress && sInput.dataset.selectedAddress !== sAddr) {
     delete sInput.dataset.lat;
     delete sInput.dataset.lng;
     delete sInput.dataset.selectedAddress;
@@ -1004,10 +1148,11 @@ async function autoCalculateOrderDistance() {
   const payload = {
     fromAddress: sAddr,
     toAddress: rAddr,
-    fromLat: sInput.dataset.lat,
-    fromLng: sInput.dataset.lng,
-    toLat: rInput.dataset.lat,
-    toLng: rInput.dataset.lng
+    toDistrict: selectedDistrict,
+    fromLat: sInput ? sInput.dataset.lat : null,
+    fromLng: sInput ? sInput.dataset.lng : null,
+    toLat: rInput ? rInput.dataset.lat : null,
+    toLng: rInput ? rInput.dataset.lng : null
   };
 
   try {
@@ -1019,12 +1164,44 @@ async function autoCalculateOrderDistance() {
     const result = await res.json();
 
     if (result.success) {
-      if (distEl) distEl.value = result.data.distance_km;
-      if (feeEl) feeEl.value = result.data.shipping_fee;
-      if (result.data.end_point) {
-        rInput.dataset.lat = result.data.end_point.lat;
-        rInput.dataset.lng = result.data.end_point.lng;
+      const d = result.data;
+      if (distEl) distEl.value = d.distance_km;
+      if (feeEl) feeEl.value = d.shipping_fee;
+
+      if (d.end_point && rInput) {
+        rInput.dataset.lat = d.end_point.lat;
+        rInput.dataset.lng = d.end_point.lng;
         rInput.dataset.selectedAddress = rAddr;
+      }
+
+      // Cập nhật lên bản đồ trong modal
+      if (appState.orderModalMap) {
+        if (d.end_point) {
+          setOrderModalEndMarker(d.end_point.lat, d.end_point.lng);
+        }
+
+        if (d.route_coordinates && d.route_coordinates.length > 0) {
+          if (appState.orderModalPolyline) {
+            appState.orderModalMap.removeLayer(appState.orderModalPolyline);
+          }
+          const latlngs = d.route_coordinates.map(c => [c[1], c[0]]);
+          appState.orderModalPolyline = L.polyline(latlngs, {
+            color: '#2563eb',
+            weight: 5,
+            opacity: 0.85
+          }).addTo(appState.orderModalMap);
+
+          const badge = document.getElementById('modal-map-distance-tag');
+          if (badge) {
+            badge.textContent = `${d.distance_km} km • ${formatVND(d.shipping_fee)}`;
+            badge.classList.remove('hidden');
+          }
+
+          const mapContainer = document.getElementById('order-modal-map-container');
+          if (mapContainer && !mapContainer.classList.contains('hidden') && !fromMapClick) {
+            appState.orderModalMap.fitBounds(appState.orderModalPolyline.getBounds(), { padding: [30, 30] });
+          }
+        }
       }
     }
   } catch (err) {
@@ -1663,24 +1840,7 @@ function initDriverPortal(driver) {
 }
 
 function openDriverQuickOrderModal() {
-  const dAddr = document.getElementById('d-quick-address');
-  if (dAddr) {
-    dAddr.value = '';
-    delete dAddr.dataset.lat;
-    delete dAddr.dataset.lng;
-    delete dAddr.dataset.selectedAddress;
-  }
-  document.getElementById('d-quick-name').value = '';
-  document.getElementById('d-quick-phone').value = '';
-  document.getElementById('d-quick-cod').value = '0';
-  document.getElementById('d-quick-notes').value = '';
-  document.getElementById('d-quick-dist').textContent = '-- km';
-  document.getElementById('d-quick-earn').textContent = '-- đ';
-  appState.driverQuickCalc = { distanceKm: 0, shippingFee: 0, earning: 0 };
-
-  setDriverTripDirection('delivery');
-  document.getElementById('modal-driver-quick-order').classList.remove('hidden');
-  lucide.createIcons();
+  alert('Tài xế không có quyền tạo cuốc xe. Vui lòng liên hệ Kế toán hoặc Giám đốc điều phối đơn.');
 }
 
 function setDriverTripDirection(dir) {
@@ -1911,20 +2071,77 @@ async function loadShipperPortalData(isPolling = false) {
     }
     previousAssignedCount = assignedOrders.length;
 
-    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const todayFormatted = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+    const todayDateText = document.getElementById('sp-today-date-text');
+    if (todayDateText) todayDateText.textContent = todayFormatted;
+
     const todayCompleted = completedOrders.filter(o => o.completed_at && o.completed_at.slice(0, 10) === today);
     const todayKm = todayCompleted.reduce((acc, o) => acc + (o.distance_km || 0), 0);
     const todayEarning = todayCompleted.reduce((acc, o) => acc + (o.shipper_earning || 0), 0);
 
-    document.getElementById('sp-today-trips').textContent = todayCompleted.length;
-    document.getElementById('sp-today-km').textContent = `${todayKm.toFixed(1)} km`;
-    document.getElementById('sp-today-earning').textContent = formatVND(todayEarning);
+    const spTodayTrips = document.getElementById('sp-today-trips');
+    const spTodayKm = document.getElementById('sp-today-km');
+    const spTodayEarning = document.getElementById('sp-today-earning');
+
+    if (spTodayTrips) spTodayTrips.textContent = todayCompleted.length;
+    if (spTodayKm) spTodayKm.textContent = `${todayKm.toFixed(1)} km`;
+    if (spTodayEarning) spTodayEarning.textContent = formatVND(todayEarning);
+
+    // THỐNG KÊ THEO THÁNG CỦA TÀI XẾ
+    populateDriverMonthSelect();
+    calculateDriverMonthlyStats(completedOrders);
 
     const displayOrders = appState.activeShipperTab === 'active' ? activeOrders : completedOrders;
     renderShipperPortalOrders(displayOrders);
   } catch (err) {
     console.error('Error loading shipper portal:', err);
   }
+}
+
+function populateDriverMonthSelect() {
+  const sel = document.getElementById('sp-month-select');
+  if (!sel || sel.options.length > 0) return;
+
+  const now = new Date();
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`;
+    if (i === 0) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+function onDriverMonthChange() {
+  loadShipperPortalData();
+}
+
+function calculateDriverMonthlyStats(completedOrders) {
+  const sel = document.getElementById('sp-month-select');
+  const selectedMonth = sel && sel.value ? sel.value : new Date().toISOString().slice(0, 7);
+
+  const monthCompleted = completedOrders.filter(o => o.completed_at && o.completed_at.slice(0, 7) === selectedMonth);
+  const monthKm = monthCompleted.reduce((acc, o) => acc + (o.distance_km || 0), 0);
+  const monthEarning = monthCompleted.reduce((acc, o) => acc + (o.shipper_earning || 0), 0);
+
+  const tripsEl = document.getElementById('sp-month-trips');
+  const kmEl = document.getElementById('sp-month-km');
+  const earnEl = document.getElementById('sp-month-earning');
+
+  if (tripsEl) tripsEl.textContent = monthCompleted.length;
+  if (kmEl) kmEl.textContent = `${monthKm.toFixed(1)} km`;
+  if (earnEl) earnEl.textContent = formatVND(monthEarning);
+}
+
+async function viewMySalarySlip() {
+  if (!appState.currentUser || appState.userRole !== 'shipper') return;
+  const sel = document.getElementById('sp-month-select');
+  const monthYear = sel && sel.value ? sel.value : new Date().toISOString().slice(0, 7);
+  openSalarySlip(appState.currentUser.id, monthYear);
 }
 
 async function acceptAssignedTrip(orderId) {
@@ -1951,7 +2168,7 @@ function renderShipperPortalOrders(orders) {
       <div class="bg-white p-8 rounded-3xl border border-slate-200 text-center text-slate-400 space-y-2">
         <i data-lucide="check-circle-2" class="w-12 h-12 mx-auto text-emerald-500"></i>
         <p class="text-xs font-bold text-slate-700">Hiện không có đơn nào cần giao</p>
-        <p class="text-[11px] text-slate-400">Bạn có thể bấm "TẠO CUỐC XE MỚI" ở trên để tự tạo chuyến đi.</p>
+        <p class="text-[11px] text-slate-400">Đơn hàng mới từ công ty sẽ tự động hiển thị và phát chuông báo tại đây.</p>
       </div>
     `;
     lucide.createIcons();

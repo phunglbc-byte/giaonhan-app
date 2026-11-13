@@ -300,11 +300,98 @@ app.get('/api/geocode/search', async (req, res) => {
   res.json(results);
 });
 
+// REVERSE GEOCODING (Tìm tên địa chỉ khi chạm/ghim trên bản đồ)
+app.get('/api/geocode/reverse', async (req, res) => {
+  const lat = parseFloat(req.query.lat);
+  const lng = parseFloat(req.query.lng);
+
+  if (isNaN(lat) || isNaN(lng)) {
+    return res.status(400).json({ success: false, error: 'Tọa độ không hợp lệ' });
+  }
+
+  // 1. Kiểm tra trụ sở ROSI
+  const dToRosi = calculateHaversineKm(lat, lng, ROSI_HUB.lat, ROSI_HUB.lng);
+  if (dToRosi < 0.1) {
+    return res.json({
+      success: true,
+      address: ROSI_HUB.address,
+      name: ROSI_HUB.name,
+      district: 'Thanh Khê',
+      city: 'Đà Nẵng'
+    });
+  }
+
+  // 2. Tra trong từ điển Đà Nẵng xem có gần địa điểm nào đã biết không (trong bán kính 300m)
+  let closest = null;
+  let minD = 999;
+  for (const loc of DA_NANG_LOCATIONS) {
+    const d = calculateHaversineKm(lat, lng, loc.lat, loc.lng);
+    if (d < minD) {
+      minD = d;
+      closest = loc;
+    }
+  }
+
+  // 3. Tra cứu nhanh Nominatim reverse (1.8s timeout)
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 1800);
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'RosiDelivery/1.0' },
+      signal: ctrl.signal
+    });
+    clearTimeout(timer);
+
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.address) {
+        const a = data.address;
+        const houseNo = a.house_number || '';
+        const road = a.road || a.pedestrian || a.suburb || '';
+        const district = a.city_district || a.suburb || a.quarter || '';
+        const parts = [
+          houseNo ? `${houseNo} ${road}` : road,
+          district,
+          'Đà Nẵng'
+        ].filter(Boolean);
+
+        const shortAddr = parts.join(', ');
+        return res.json({
+          success: true,
+          address: shortAddr || data.display_name,
+          display_name: data.display_name,
+          road,
+          district,
+          city: 'Đà Nẵng'
+        });
+      }
+    }
+  } catch (e) {}
+
+  // 4. Nếu gần địa điểm trong từ điển (dưới 500m)
+  if (closest && minD <= 0.5) {
+    return res.json({
+      success: true,
+      address: closest.name,
+      matched: closest.name,
+      city: 'Đà Nẵng'
+    });
+  }
+
+  // 5. Fallback vị trí ghim
+  res.json({
+    success: true,
+    address: `Vị trí đã ghim (${lat.toFixed(4)}, ${lng.toFixed(4)}), Đà Nẵng`,
+    city: 'Đà Nẵng'
+  });
+});
+
 // Caches for lightning-fast repeated queries and rate-limit prevention
 const geocodeCache = new Map();
 const routeCache = new Map();
 
-async function resolveCoordinates(address, providedLat, providedLng) {
+async function resolveCoordinates(address, providedLat, providedLng, district = '') {
   let lat = parseFloat(providedLat);
   let lng = parseFloat(providedLng);
 
@@ -316,7 +403,11 @@ async function resolveCoordinates(address, providedLat, providedLng) {
     return { lat: ROSI_HUB.lat, lng: ROSI_HUB.lng, source: 'hub_default' };
   }
 
-  const cleanAddr = address.trim();
+  let cleanAddr = address.trim();
+  if (district && !cleanAddr.toLowerCase().includes(district.toLowerCase())) {
+    cleanAddr = `${cleanAddr}, Quận ${district}`;
+  }
+
   const cleanQ = removeVietnameseTones(cleanAddr);
 
   // 1. Kiểm tra trụ sở ROSI
@@ -385,10 +476,10 @@ async function resolveCoordinates(address, providedLat, providedLng) {
 
 app.post('/api/route/calculate', async (req, res) => {
   try {
-    const { fromLat, fromLng, toLat, toLng, fromAddress, toAddress } = req.body;
+    const { fromLat, fromLng, toLat, toLng, fromAddress, toAddress, fromDistrict, toDistrict, district } = req.body;
 
-    const start = await resolveCoordinates(fromAddress, fromLat, fromLng);
-    const end = await resolveCoordinates(toAddress, toLat, toLng);
+    const start = await resolveCoordinates(fromAddress, fromLat, fromLng, fromDistrict);
+    const end = await resolveCoordinates(toAddress, toLat, toLng, toDistrict || district);
 
     const startLat = start.lat;
     const startLng = start.lng;

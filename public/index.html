@@ -620,25 +620,62 @@
           </button>
         </div>
 
-        <!-- NÚT TÀI XẾ TẠO CUỐC XE NHANH TRÊN ĐIỆN THOẠI -->
-        <button onclick="openDriverQuickOrderModal()" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs shadow-md flex items-center justify-center gap-2 transition active:scale-95">
-          <i data-lucide="plus-circle" class="w-5 h-5"></i>
-          <span>TẠO CUỐC XE MỚI (ĐI GIAO HOẶC NHẬN HÀNG)</span>
-        </button>
+        <!-- THỐNG KÊ CỦA TÀI XẾ: HÔM NAY & THEO THÁNG -->
+        <div class="space-y-2.5">
+          <!-- Card Hôm Nay -->
+          <div class="bg-white p-3.5 rounded-3xl border border-slate-200 shadow-sm space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-extrabold text-xs text-slate-800 flex items-center gap-1.5">
+                <i data-lucide="calendar" class="w-4 h-4 text-blue-600"></i>
+                Hôm nay (<span id="sp-today-date-text">Hôm nay</span>)
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200">Thời gian thực</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center text-xs">
+              <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                <p class="text-slate-500 text-[10px] font-medium">Số cuốc</p>
+                <p id="sp-today-trips" class="text-base font-black text-slate-800">0</p>
+              </div>
+              <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                <p class="text-slate-500 text-[10px] font-medium">Tổng Km</p>
+                <p id="sp-today-km" class="text-base font-black text-blue-600">0 km</p>
+              </div>
+              <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                <p class="text-slate-500 text-[10px] font-medium">Thu nhập ngày</p>
+                <p id="sp-today-earning" class="text-base font-black text-emerald-600">0 đ</p>
+              </div>
+            </div>
+          </div>
 
-        <!-- Thống kê cá nhân hôm nay -->
-        <div class="grid grid-cols-3 gap-2 text-center text-xs">
-          <div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm">
-            <p class="text-slate-500 text-[10px] font-medium">Số cuốc hôm nay</p>
-            <p id="sp-today-trips" class="text-base md:text-lg font-black text-slate-800">0</p>
-          </div>
-          <div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm">
-            <p class="text-slate-500 text-[10px] font-medium">Tổng Km chạy</p>
-            <p id="sp-today-km" class="text-base md:text-lg font-black text-blue-600">0 km</p>
-          </div>
-          <div class="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm">
-            <p class="text-slate-500 text-[10px] font-medium">Tiền công ngày</p>
-            <p id="sp-today-earning" class="text-base md:text-lg font-black text-emerald-600">0 đ</p>
+          <!-- Card Thống Kê Theo Tháng -->
+          <div class="bg-gradient-to-br from-indigo-50/70 to-blue-50/60 p-3.5 rounded-3xl border border-indigo-100 shadow-sm space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-extrabold text-xs text-indigo-900 flex items-center gap-1.5 flex-shrink-0">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-600"></i>
+                Thống kê tháng:
+              </span>
+              <select id="sp-month-select" onchange="onDriverMonthChange()" class="border border-indigo-200 rounded-xl px-2.5 py-1 bg-white font-bold text-indigo-900 text-xs shadow-xs focus:ring-2 focus:ring-indigo-400"></select>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center text-xs">
+              <div class="bg-white p-2.5 rounded-2xl border border-indigo-100 shadow-xs">
+                <p class="text-slate-500 text-[10px] font-medium">Số cuốc tháng</p>
+                <p id="sp-month-trips" class="text-base font-black text-indigo-900">0</p>
+              </div>
+              <div class="bg-white p-2.5 rounded-2xl border border-indigo-100 shadow-xs">
+                <p class="text-slate-500 text-[10px] font-medium">Tổng Km tháng</p>
+                <p id="sp-month-km" class="text-base font-black text-blue-600">0 km</p>
+              </div>
+              <div class="bg-white p-2.5 rounded-2xl border border-indigo-100 shadow-xs">
+                <p class="text-slate-500 text-[10px] font-medium">Tổng lương / công</p>
+                <p id="sp-month-earning" class="text-base font-black text-emerald-600">0 đ</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-end">
+              <button onclick="viewMySalarySlip()" class="text-xs text-indigo-700 hover:text-indigo-900 font-bold flex items-center gap-1 underline py-0.5">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                <span>Xem chi tiết phiếu lương tháng này →</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -745,9 +782,60 @@
             <input type="text" id="order-receiver-name" placeholder="Tên khách hàng" class="border border-slate-300 rounded-lg px-2.5 py-2 bg-white font-medium w-full">
             <input type="text" id="order-receiver-phone" placeholder="Số điện thoại khách hàng" class="border border-slate-300 rounded-lg px-2.5 py-2 bg-white w-full">
           </div>
+
+          <!-- LỰA CHỌN TỈNH/THÀNH PHỐ & QUẬN/HUYỆN ĐỂ TỰ ĐỘNG ĐO CHÍNH XÁC 100% -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="order-geo-filter-row">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-0.5 text-[11px]">Tỉnh / Thành phố:</label>
+              <select id="order-province" onchange="onOrderDistrictChange()" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-bold text-slate-800 text-xs">
+                <option value="Đà Nẵng" selected>TP. Đà Nẵng</option>
+                <option value="Quảng Nam">Tỉnh Quảng Nam</option>
+                <option value="Thừa Thiên Huế">Tỉnh Thừa Thiên Huế</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-blue-900 mb-0.5 text-[11px]">Quận / Huyện (chọn để đo chuẩn):</label>
+              <select id="order-district" onchange="onOrderDistrictChange()" class="w-full border border-blue-400 rounded-lg px-2.5 py-1.5 bg-blue-50/70 font-black text-blue-900 text-xs">
+                <option value="">-- Tất cả quận huyện --</option>
+                <option value="Hải Châu">Quận Hải Châu</option>
+                <option value="Thanh Khê">Quận Thanh Khê</option>
+                <option value="Sơn Trà">Quận Sơn Trà</option>
+                <option value="Ngũ Hành Sơn">Quận Ngũ Hành Sơn</option>
+                <option value="Cẩm Lệ">Quận Cẩm Lệ</option>
+                <option value="Liên Chiểu">Quận Liên Chiểu</option>
+                <option value="Hòa Vang">Huyện Hòa Vang</option>
+              </select>
+            </div>
+          </div>
+
           <div class="relative">
-            <input type="text" id="order-receiver-address" placeholder="Nhập địa chỉ tại Đà Nẵng (vd: 120 Nguyễn Văn Linh, Chợ Cồn...)" class="w-full border border-slate-300 rounded-lg px-2.5 py-2 bg-white" oninput="debounceGeocode(this, 'receiver')" onblur="autoCalculateOrderDistance()" onchange="autoCalculateOrderDistance()">
+            <input type="text" id="order-receiver-address" placeholder="Nhập địa chỉ tại Đà Nẵng (vd: 120 Nguyễn Văn Linh, Chợ Cồn...)" class="w-full border border-slate-300 rounded-lg px-2.5 py-2 bg-white font-medium" oninput="debounceGeocode(this, 'receiver')" onblur="autoCalculateOrderDistance()" onchange="autoCalculateOrderDistance()">
             <div id="suggest-receiver" class="autocomplete-dropdown hidden"></div>
+          </div>
+        </div>
+
+        <!-- BẢN ĐỒ KIỂM TRA LỘ TRÌNH & GHIM ĐIỂM ĐẾN TRỰC TIẾP -->
+        <div class="border border-blue-200 rounded-2xl overflow-hidden bg-white shadow-xs">
+          <div class="p-2 sm:p-2.5 bg-blue-50/80 border-b border-blue-200 flex items-center justify-between">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-blue-950">
+              <i data-lucide="map" class="w-4 h-4 text-blue-600"></i>
+              <span>Kiểm tra lộ trình & Ghim điểm đến</span>
+            </div>
+            <button type="button" onclick="toggleOrderModalMap()" id="btn-toggle-modal-map" class="px-2.5 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] flex items-center gap-1 transition shadow-xs">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+              <span id="txt-toggle-modal-map">Mở bản đồ kiểm tra</span>
+            </button>
+          </div>
+
+          <div id="order-modal-map-container" class="hidden">
+            <div id="order-modal-map" class="w-full h-52 sm:h-64 bg-slate-100 relative z-10"></div>
+            <div class="p-2 bg-amber-50 text-[11px] text-amber-900 border-t border-amber-200 flex items-center justify-between">
+              <span class="flex items-center gap-1">
+                <i data-lucide="crosshair" class="w-3.5 h-3.5 text-amber-600 flex-shrink-0"></i>
+                <span>Chạm bản đồ hoặc kéo ghim <b>ĐỎ</b> để định vị chuẩn xác từng mét đường!</span>
+              </span>
+              <span id="modal-map-distance-tag" class="px-2 py-0.5 rounded-md bg-blue-600 text-white font-bold text-[10px] hidden">0 km</span>
+            </div>
           </div>
         </div>
 
@@ -801,92 +889,7 @@
     </div>
   </div>
 
-  <!-- ======================================================== -->
-  <!-- MODAL: TÀI XẾ TẠO CUỐC XE NHANH TRÊN ĐIỆN THOẠI -->
-  <!-- ======================================================== -->
-  <div id="modal-driver-quick-order" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-3 overflow-y-auto">
-    <div class="bg-white rounded-3xl max-w-sm w-full flex flex-col shadow-2xl overflow-hidden">
-      
-      <div class="px-5 py-3.5 bg-emerald-600 text-white flex items-center justify-between flex-shrink-0">
-        <h3 class="font-black text-xs flex items-center gap-1.5">
-          <i data-lucide="plus-circle" class="w-4 h-4"></i>
-          TÀI XẾ TẠO CUỐC XE NHANH
-        </h3>
-        <button onclick="closeModal('modal-driver-quick-order')" class="p-1 rounded-lg hover:bg-white/20 transition">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
 
-      <div class="p-4 space-y-3 text-xs">
-        <div class="bg-slate-50 p-2 rounded-2xl border border-slate-200">
-          <div class="grid grid-cols-2 gap-1.5 text-center font-bold">
-            <button type="button" id="d-quick-delivery" onclick="setDriverTripDirection('delivery')" class="py-2 rounded-xl bg-emerald-600 text-white shadow-xs">
-              Đi giao cho khách
-            </button>
-            <button type="button" id="d-quick-pickup" onclick="setDriverTripDirection('pickup')" class="py-2 rounded-xl bg-white text-slate-600 border">
-              Đi nhận về Cty
-            </button>
-          </div>
-        </div>
-
-        <div class="bg-emerald-50 p-2 rounded-2xl border border-emerald-200 text-[11px] text-emerald-900 font-bold flex items-center gap-1.5">
-          <i data-lucide="building" class="w-4 h-4 text-emerald-600"></i>
-          <span>Trụ sở: 29 Đặng Thai Mai, Thanh Khê, Đà Nẵng</span>
-        </div>
-
-        <div>
-          <label class="block font-bold text-slate-800 mb-1" id="d-target-label">Địa chỉ khách hàng tại Đà Nẵng *</label>
-          <div class="relative">
-            <input type="text" id="d-quick-address" placeholder="Gõ tên đường, địa chỉ khách (vd: 120 Nguyễn Văn Linh...)" class="w-full border border-slate-300 rounded-xl px-3 py-2 bg-white font-medium" oninput="debounceGeocode(this, 'driver-quick')" onblur="autoCalculateDriverQuickOrder()" onchange="autoCalculateDriverQuickOrder()">
-            <div id="suggest-driver-quick" class="autocomplete-dropdown hidden"></div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block font-medium text-slate-700 mb-0.5">Tên khách</label>
-            <input type="text" id="d-quick-name" placeholder="Anh/Chị..." class="w-full border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white">
-          </div>
-          <div>
-            <label class="block font-medium text-slate-700 mb-0.5">SĐT khách</label>
-            <input type="tel" id="d-quick-phone" placeholder="0905..." class="w-full border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block font-medium text-slate-700 mb-0.5">Thu COD</label>
-            <input type="number" id="d-quick-cod" value="0" step="10000" class="w-full border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white font-bold">
-          </div>
-          <div>
-            <label class="block font-medium text-slate-700 mb-0.5">Ghi chú</label>
-            <input type="text" id="d-quick-notes" placeholder="Ghi chú..." class="w-full border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white">
-          </div>
-        </div>
-
-        <!-- Khung đo khoảng cách tự động -->
-        <div class="grid grid-cols-2 gap-2 text-center bg-blue-50 p-2.5 rounded-2xl border border-blue-200">
-          <div>
-            <span class="text-[10px] text-slate-500 font-medium">Quãng đường</span>
-            <p id="d-quick-dist" class="font-black text-blue-700 text-sm">-- km</p>
-          </div>
-          <div>
-            <span class="text-[10px] text-slate-500 font-medium">Tiền công nhận</span>
-            <p id="d-quick-earn" class="font-black text-emerald-700 text-sm">-- đ</p>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex justify-end space-x-2">
-        <button onclick="closeModal('modal-driver-quick-order')" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 font-medium text-xs">Hủy</button>
-        <button onclick="submitDriverQuickOrder()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md">
-          BẤM NHẬN CUỐC NGAY
-        </button>
-      </div>
-
-    </div>
-  </div>
 
   <!-- ======================================================== -->
   <!-- MODAL: CHI TIẾT ĐƠN HÀNG -->
