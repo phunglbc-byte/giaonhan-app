@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#2563eb">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Hệ Thống Quản Lý Giao Nhận & Tính Lương</title>
+  <title>CÔNG TY TNHH ROSI VIỆT NAM - Quản Lý Giao Nhận & Tính Lương</title>
 
   <!-- PWA Manifest -->
   <link rel="manifest" href="/manifest.json">
@@ -50,13 +50,16 @@
   <div id="login-screen" class="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden border border-slate-100">
       
-      <!-- Header logo -->
-      <div class="bg-gradient-to-r from-blue-700 to-indigo-700 p-6 text-white text-center relative">
+      <!-- Header logo ROSI VIỆT NAM -->
+      <div class="bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 p-6 text-white text-center relative">
         <div class="w-14 h-14 mx-auto rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-3 shadow-inner">
           <i data-lucide="truck" class="w-8 h-8 text-white"></i>
         </div>
-        <h2 class="text-xl font-black tracking-tight">GIAONHAN EXPRESS</h2>
-        <p class="text-xs text-blue-100 mt-0.5">Hệ thống Điều phối & Tính Lương Theo Km</p>
+        <h2 class="text-base font-black tracking-tight uppercase">CÔNG TY TNHH ROSI VIỆT NAM</h2>
+        <p class="text-[11px] text-blue-100 mt-1 flex items-center justify-center gap-1">
+          <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-300"></i>
+          29 Đặng Thai Mai, Thanh Khê, Đà Nẵng
+        </p>
       </div>
 
       <!-- Tab chọn vai trò: Giám đốc (Web) hay Tài xế (App) -->
@@ -90,7 +93,7 @@
           </div>
           <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md transition flex items-center justify-center gap-2">
             <i data-lucide="log-in" class="w-4 h-4"></i>
-            <span>Đăng Nhập Quản Trị Web</span>
+            <span>Đăng Nhập Quản Trị ROSI</span>
           </button>
         </form>
 
@@ -144,8 +147,8 @@
           <i data-lucide="truck" class="w-5 h-5"></i>
         </div>
         <div>
-          <h1 class="text-sm md:text-base font-bold tracking-tight leading-tight">GiaoNhan Express</h1>
-          <p class="text-[11px] text-blue-100 hidden sm:block">Quản lý Đơn hàng & Tính Lương theo Km</p>
+          <h1 class="text-xs md:text-sm font-extrabold tracking-tight leading-tight uppercase">ROSI VIỆT NAM</h1>
+          <p class="text-[10px] text-blue-100 hidden sm:block truncate max-w-xs md:max-w-md">29 Đặng Thai Mai, Q. Thanh Khê, TP. Đà Nẵng</p>
         </div>
       </div>
 
@@ -156,13 +159,11 @@
           <span id="header-user-name">Đang tải...</span>
         </div>
 
-        <!-- Mở trên điện thoại -->
         <button onclick="openPhoneConnectModal()" class="p-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white transition flex items-center space-x-1 text-xs" title="Mở trên điện thoại">
           <i data-lucide="smartphone" class="w-4 h-4"></i>
           <span class="hidden lg:inline text-[11px]">Mở trên ĐT</span>
         </button>
 
-        <!-- Đăng xuất -->
         <button onclick="handleLogout()" class="p-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white transition flex items-center space-x-1 text-xs" title="Đăng xuất">
           <i data-lucide="log-out" class="w-4 h-4"></i>
           <span class="hidden sm:inline text-[11px]">Thoát</span>
@@ -177,41 +178,47 @@
   <div class="flex-1 flex max-w-7xl w-full mx-auto pb-20 md:pb-6">
     
     <!-- DESKTOP SIDEBAR CHO GIÁM ĐỐC / ADMIN -->
-    <aside id="desktop-sidebar" class="hidden md:flex flex-col w-60 bg-white border-r border-slate-200 p-4 space-y-1">
-      <button onclick="navigateView('dashboard')" id="nav-dashboard" class="nav-btn active flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition text-blue-600 bg-blue-50">
-        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+    <aside id="desktop-sidebar" class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 p-4 space-y-1">
+      <div class="p-3 mb-2 bg-blue-50 rounded-2xl border border-blue-100">
+        <p class="text-[10px] uppercase font-bold text-blue-800 tracking-wider">Trụ sở cố định:</p>
+        <p class="text-xs font-extrabold text-slate-800 mt-0.5">29 Đặng Thai Mai</p>
+        <p class="text-[11px] text-slate-500">P. Vĩnh Trung, Thanh Khê, Đà Nẵng</p>
+      </div>
+
+      <button onclick="navigateView('dashboard')" id="nav-dashboard" class="nav-btn active flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold transition text-blue-600 bg-blue-50">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
         <span>Tổng quan</span>
       </button>
 
-      <button onclick="navigateView('orders')" id="nav-orders" class="nav-btn flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition text-slate-600 hover:bg-slate-100">
-        <i data-lucide="package" class="w-5 h-5"></i>
+      <button onclick="navigateView('orders')" id="nav-orders" class="nav-btn flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+        <i data-lucide="package" class="w-4 h-4"></i>
         <span>Quản lý đơn hàng</span>
       </button>
 
-      <button onclick="navigateView('route-calc')" id="nav-route-calc" class="nav-btn flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition text-slate-600 hover:bg-slate-100">
-        <i data-lucide="map-pin" class="w-5 h-5"></i>
-        <span>Đo Km & Lộ trình</span>
+      <button onclick="navigateView('route-calc')" id="nav-route-calc" class="nav-btn flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+        <i data-lucide="map-pin" class="w-4 h-4"></i>
+        <span>Đo Km từ 29 Đặng Thai Mai</span>
       </button>
 
-      <button onclick="navigateView('shippers')" id="nav-shippers" class="nav-btn flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition text-slate-600 hover:bg-slate-100">
-        <i data-lucide="users" class="w-5 h-5"></i>
+      <button onclick="navigateView('shippers')" id="nav-shippers" class="nav-btn flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+        <i data-lucide="users" class="w-4 h-4"></i>
         <span>Nhân viên giao nhận</span>
       </button>
 
-      <button onclick="navigateView('payroll')" id="nav-payroll" class="nav-btn flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition text-slate-600 hover:bg-slate-100">
-        <i data-lucide="receipt" class="w-5 h-5"></i>
+      <button onclick="navigateView('payroll')" id="nav-payroll" class="nav-btn flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+        <i data-lucide="receipt" class="w-4 h-4"></i>
         <span>Bảng tính lương tháng</span>
       </button>
 
-      <button onclick="navigateView('settings')" id="nav-settings" class="nav-btn flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition text-slate-600 hover:bg-slate-100">
-        <i data-lucide="sliders" class="w-5 h-5"></i>
+      <button onclick="navigateView('settings')" id="nav-settings" class="nav-btn flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+        <i data-lucide="sliders" class="w-4 h-4"></i>
         <span>Cấu hình bảng giá</span>
       </button>
 
       <div class="pt-6 mt-auto">
-        <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-200 text-xs text-emerald-800">
-          <p class="font-bold flex items-center gap-1.5"><i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i> Xuất Excel</p>
-          <p class="mt-1 text-slate-600 text-[11px]">Xuất file Excel đầy đủ chi tiết chuyến đi giao cho kế toán đối soát.</p>
+        <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 text-xs text-emerald-800">
+          <p class="font-bold flex items-center gap-1.5"><i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i> Xuất Excel ROSI</p>
+          <p class="mt-1 text-slate-600 text-[11px]">Xuất file Excel đầy đủ chi tiết các chuyến giao nhận tại Đà Nẵng cho kế toán.</p>
         </div>
       </div>
     </aside>
@@ -225,19 +232,19 @@
       <section id="view-dashboard" class="space-y-5">
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-xl font-bold text-slate-800">Tổng quan điều hành</h2>
-            <p class="text-xs text-slate-500">Báo cáo thời gian thực cho Ban Giám đốc</p>
+            <h2 class="text-lg md:text-xl font-black text-slate-800">Tổng quan điều hành ROSI VIỆT NAM</h2>
+            <p class="text-xs text-slate-500">Trụ sở: 29 Đặng Thai Mai, P. Vĩnh Trung, Q. Thanh Khê, Đà Nẵng</p>
           </div>
-          <button onclick="openCreateOrderModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-4 py-2 rounded-xl shadow-sm flex items-center space-x-2 transition">
+          <button onclick="openCreateOrderModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-2xl shadow-sm flex items-center space-x-2 transition">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
-            <span>Tạo đơn mới</span>
+            <span>Tạo đơn giao / nhận mới</span>
           </button>
         </div>
 
         <!-- 4 KPI Cards -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
-            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+          <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
               <i data-lucide="box" class="w-6 h-6"></i>
             </div>
             <div>
@@ -247,30 +254,30 @@
             </div>
           </div>
 
-          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
-            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+          <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
               <i data-lucide="navigation" class="w-6 h-6"></i>
             </div>
             <div>
               <p class="text-xs text-slate-500 font-medium">Quãng đường đã chạy</p>
               <h3 id="stat-total-km" class="text-xl font-bold text-slate-800">0 km</h3>
-              <p class="text-[11px] text-slate-400">Xe lăn bánh</p>
+              <p class="text-[11px] text-slate-400">Đà Nẵng</p>
             </div>
           </div>
 
-          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
-            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
+          <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
               <i data-lucide="wallet" class="w-6 h-6"></i>
             </div>
             <div>
-              <p class="text-xs text-slate-500 font-medium">Tổng tiền cước</p>
+              <p class="text-xs text-slate-500 font-medium">Tổng cước chuyến</p>
               <h3 id="stat-total-revenue" class="text-xl font-bold text-slate-800">0 đ</h3>
               <p class="text-[11px] text-purple-600 font-medium" id="stat-shipper-earning">Lương xế: 0 đ</p>
             </div>
           </div>
 
-          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
-            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+          <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
               <i data-lucide="bike" class="w-6 h-6"></i>
             </div>
             <div>
@@ -282,7 +289,7 @@
         </div>
 
         <!-- Đơn hàng gần đây -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div class="p-4 border-b border-slate-100 flex items-center justify-between">
             <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
               <i data-lucide="clock" class="w-4 h-4 text-blue-600"></i>
@@ -304,18 +311,17 @@
       <section id="view-orders" class="space-y-4 hidden">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 class="text-xl font-bold text-slate-800">Danh sách đơn hàng</h2>
-            <p class="text-xs text-slate-500">Quản lý lộ trình, cước phí và điều phối tài xế</p>
+            <h2 class="text-xl font-bold text-slate-800">Danh sách đơn hàng ROSI</h2>
+            <p class="text-xs text-slate-500">Quản lý các chuyến đi giao và đi nhận hàng từ 29 Đặng Thai Mai</p>
           </div>
           <div class="flex items-center space-x-2">
-            <button onclick="openCreateOrderModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-4 py-2 rounded-xl shadow-sm flex items-center space-x-2 transition">
+            <button onclick="openCreateOrderModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-2xl shadow-sm flex items-center space-x-2 transition">
               <i data-lucide="plus" class="w-4 h-4"></i>
               <span>Tạo đơn mới</span>
             </button>
           </div>
         </div>
 
-        <!-- Bộ lọc trạng thái -->
         <div class="flex items-center space-x-2 overflow-x-auto pb-1 text-xs">
           <button onclick="filterOrders('all')" class="order-filter-btn px-3 py-1.5 rounded-lg bg-blue-600 text-white font-medium" data-status="all">Tất cả</button>
           <button onclick="filterOrders('pending')" class="order-filter-btn px-3 py-1.5 rounded-lg bg-white text-slate-600 border border-slate-200 font-medium" data-status="pending">Chờ gán</button>
@@ -324,45 +330,67 @@
           <button onclick="filterOrders('completed')" class="order-filter-btn px-3 py-1.5 rounded-lg bg-white text-slate-600 border border-slate-200 font-medium" data-status="completed">Hoàn thành</button>
         </div>
 
-        <!-- Danh sách card đơn hàng -->
         <div id="orders-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
       </section>
 
       <!-- ======================================================== -->
-      <!-- VIEW 3: ROUTE & DISTANCE CALCULATOR -->
+      <!-- VIEW 3: ROUTE & DISTANCE CALCULATOR (CỐ ĐỊNH 29 ĐẶNG THAI MAI) -->
       <!-- ======================================================== -->
       <section id="view-route-calc" class="space-y-4 hidden">
         <div>
           <h2 class="text-xl font-bold text-slate-800">Bản đồ Đo Quãng Đường & Báo Giá Tự Động</h2>
-          <p class="text-xs text-slate-500">Tự động định vị đường đi thực tế qua bản đồ OpenStreetMap & OSRM Engine</p>
+          <p class="text-xs text-slate-500">Trụ sở cố định: <b>29 Đặng Thai Mai, P. Vĩnh Trung, Q. Thanh Khê, TP. Đà Nẵng</b></p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div class="lg:col-span-5 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <div class="lg:col-span-5 bg-white p-4 rounded-3xl border border-slate-200 shadow-sm space-y-4">
             
+            <!-- Chế độ chuyến đi -->
+            <div class="bg-blue-50 p-2.5 rounded-2xl border border-blue-200 space-y-1.5">
+              <p class="text-[11px] font-bold text-blue-900">Chọn loại chuyến:</p>
+              <div class="grid grid-cols-2 gap-2 text-xs font-bold">
+                <button type="button" id="btn-mode-delivery" onclick="setRouteTripMode('delivery')" class="py-2 px-2.5 rounded-xl bg-blue-600 text-white shadow-xs text-center flex items-center justify-center gap-1">
+                  <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                  <span>Đi giao cho khách</span>
+                </button>
+                <button type="button" id="btn-mode-pickup" onclick="setRouteTripMode('pickup')" class="py-2 px-2.5 rounded-xl bg-white text-slate-700 border border-slate-200 text-center flex items-center justify-center gap-1">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                  <span>Đi nhận về Cty</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Điểm 1: Điểm lấy hàng -->
             <div class="relative">
-              <label class="block text-xs font-bold text-emerald-700 mb-1 flex items-center gap-1">
-                <i data-lucide="circle-dot" class="w-3.5 h-3.5 text-emerald-600"></i>
-                Điểm lấy hàng (Điểm A)
+              <label class="block text-xs font-bold text-emerald-700 mb-1 flex items-center justify-between">
+                <span class="flex items-center gap-1">
+                  <i data-lucide="circle-dot" class="w-3.5 h-3.5 text-emerald-600"></i>
+                  Điểm lấy hàng (Điểm A)
+                </span>
+                <span id="badge-from-fixed" class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-semibold">Cố định ROSI</span>
               </label>
               <div class="flex gap-2">
-                <input type="text" id="calc-from-address" placeholder="Nhập địa chỉ lấy hàng (hoặc click trên bản đồ)"
-                  class="flex-1 text-xs border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <input type="text" id="calc-from-address" value="29 Đặng Thai Mai, Phường Vĩnh Trung, Quận Thanh Khê, Thành phố Đà Nẵng"
+                  class="flex-1 text-xs border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50">
                 <button onclick="searchAddress('from')" class="px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs flex items-center">
                   <i data-lucide="search" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
               <div id="autocomplete-from" class="autocomplete-dropdown hidden"></div>
-              <p class="text-[11px] text-slate-400 mt-1" id="calc-from-coords">Tọa độ: Chưa chọn</p>
+              <p class="text-[11px] text-slate-400 mt-1" id="calc-from-coords">Tọa độ: 16.0607, 108.2113</p>
             </div>
 
+            <!-- Điểm 2: Điểm giao hàng -->
             <div class="relative">
-              <label class="block text-xs font-bold text-rose-700 mb-1 flex items-center gap-1">
-                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-600"></i>
-                Điểm giao hàng (Điểm B)
+              <label class="block text-xs font-bold text-rose-700 mb-1 flex items-center justify-between">
+                <span class="flex items-center gap-1">
+                  <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-600"></i>
+                  Điểm giao hàng (Điểm B)
+                </span>
+                <span id="badge-to-fixed" class="text-[10px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded-md font-semibold hidden">Cố định ROSI</span>
               </label>
               <div class="flex gap-2">
-                <input type="text" id="calc-to-address" placeholder="Nhập địa chỉ giao hàng (hoặc click trên bản đồ)"
+                <input type="text" id="calc-to-address" placeholder="Nhập địa chỉ khách nhận tại Đà Nẵng (ví dụ: Chợ Cồn, Cầu Rồng...)"
                   class="flex-1 text-xs border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-rose-500">
                 <button onclick="searchAddress('to')" class="px-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs flex items-center">
                   <i data-lucide="search" class="w-3.5 h-3.5"></i>
@@ -374,17 +402,17 @@
 
             <button onclick="calculateRouteOnMap()" id="btn-calc-route" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-sm flex items-center justify-center space-x-2 transition">
               <i data-lucide="route" class="w-4 h-4"></i>
-              <span>Tính toán Quãng đường & Cước</span>
+              <span>Tính toán Quãng đường & Cước từ ROSI</span>
             </button>
 
             <div id="calc-result-box" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
               <div class="grid grid-cols-2 gap-3 text-center">
-                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
                   <span class="text-xs text-slate-500">Quãng đường</span>
                   <div id="res-distance" class="text-xl font-bold text-blue-600">0.0 km</div>
                   <span id="res-duration" class="text-[11px] text-slate-400">~ 0 phút đi xe</span>
                 </div>
-                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
                   <span class="text-xs text-slate-500">Cước dự kiến</span>
                   <div id="res-price" class="text-xl font-bold text-emerald-600">0 đ</div>
                   <span id="res-shipper-earning" class="text-[11px] text-purple-600 font-semibold">Công xế: 0 đ</span>
@@ -399,12 +427,12 @@
               </button>
             </div>
 
-            <p class="text-[11px] text-slate-500 italic bg-amber-50 p-2 rounded-lg border border-amber-200">
-              💡 Mẹo: Bạn có thể click trực tiếp lên bản đồ bên phải để đặt Điểm Lấy (A) và Điểm Giao (B), hoặc kéo thả biểu tượng ghim trên bản đồ để di chuyển chính xác!
+            <p class="text-[11px] text-slate-500 italic bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+              💡 Trụ sở ROSI tại 29 Đặng Thai Mai, Đà Nẵng đã được ghim cố định. Tài xế hoặc quản lý chỉ cần gõ tên đường/địa chỉ khách tại Đà Nẵng là hệ thống tự đo km và tính giá cước tức thì!
             </p>
           </div>
 
-          <div class="lg:col-span-7 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm relative min-h-[420px] h-[520px]">
+          <div class="lg:col-span-7 bg-white p-2 rounded-3xl border border-slate-200 shadow-sm relative min-h-[420px] h-[520px]">
             <div id="map"></div>
           </div>
         </div>
@@ -416,10 +444,10 @@
       <section id="view-shippers" class="space-y-4 hidden">
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-xl font-bold text-slate-800">Danh sách nhân viên giao nhận</h2>
-            <p class="text-xs text-slate-500">Quản lý hồ sơ, phương tiện, mật khẩu và mức lương km</p>
+            <h2 class="text-xl font-bold text-slate-800">Danh sách nhân viên giao nhận ROSI</h2>
+            <p class="text-xs text-slate-500">Khu vực: Đà Nẵng & lân cận</p>
           </div>
-          <button onclick="openShipperModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-4 py-2 rounded-xl shadow-sm flex items-center space-x-2 transition">
+          <button onclick="openShipperModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-2xl shadow-sm flex items-center space-x-2 transition">
             <i data-lucide="user-plus" class="w-4 h-4"></i>
             <span>Thêm tài xế</span>
           </button>
@@ -434,18 +462,16 @@
       <section id="view-payroll" class="space-y-4 hidden">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 class="text-xl font-bold text-slate-800">Bảng tính lương tháng nhân viên</h2>
-            <p class="text-xs text-slate-500">Tổng hợp số chuyến, tổng km và xuất file Excel cho kế toán đối soát</p>
+            <h2 class="text-xl font-bold text-slate-800">Bảng tính lương tháng nhân viên ROSI</h2>
+            <p class="text-xs text-slate-500">CÔNG TY TNHH ROSI VIỆT NAM - 29 Đặng Thai Mai, Đà Nẵng</p>
           </div>
           <div class="flex items-center space-x-2 flex-wrap gap-2">
-            <!-- Chọn tháng/năm -->
             <input type="month" id="payroll-month-input" class="text-xs border border-slate-300 rounded-xl px-3 py-2 bg-white font-medium">
             <button onclick="loadPayrollData()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded-xl font-medium flex items-center space-x-1 shadow-sm">
               <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
               <span>Xem bảng</span>
             </button>
             
-            <!-- NÚT XUẤT EXCEL CHO KẾ TOÁN -->
             <button onclick="exportPayrollExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3.5 py-2 rounded-xl font-bold flex items-center space-x-1.5 shadow-sm transition">
               <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
               <span>Xuất File Excel Kế Toán (.xlsx)</span>
@@ -453,8 +479,7 @@
           </div>
         </div>
 
-        <!-- Bảng tổng hợp lương toàn bộ shipper -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
@@ -481,85 +506,64 @@
       <!-- ======================================================== -->
       <section id="view-settings" class="space-y-4 hidden">
         <div>
-          <h2 class="text-xl font-bold text-slate-800">Cấu hình Bảng giá & Chính sách Lương</h2>
-          <p class="text-xs text-slate-500">Tùy chỉnh biểu giá km giao hàng và cơ chế chi trả cho nhân viên</p>
+          <h2 class="text-xl font-bold text-slate-800">Cấu hình Thông tin Công ty & Bảng giá</h2>
+          <p class="text-xs text-slate-500">Cài đặt thông tin trụ sở cố định và biểu giá km</p>
         </div>
 
-        <div class="max-w-2xl bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+        <div class="max-w-2xl bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-5">
           <h3 class="font-bold text-slate-800 text-sm border-b pb-2 flex items-center gap-2">
+            <i data-lucide="building" class="w-4 h-4 text-purple-600"></i>
+            1. Thông tin Cố định Công ty
+          </h3>
+
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="block font-medium text-slate-700 mb-1">Tên công ty</label>
+              <input type="text" id="setting-company_name" value="CÔNG TY TNHH ROSI VIỆT NAM" class="w-full border border-slate-300 rounded-xl px-3 py-2 font-bold bg-slate-50">
+            </div>
+            <div>
+              <label class="block font-medium text-slate-700 mb-1">Địa chỉ trụ sở cố định</label>
+              <input type="text" id="setting-company_address" value="29 Đặng Thai Mai, Phường Vĩnh Trung, Quận Thanh Khê, Thành phố Đà Nẵng" class="w-full border border-slate-300 rounded-xl px-3 py-2 font-bold bg-slate-50">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-medium text-slate-700 mb-1">Hotline công ty</label>
+                <input type="text" id="setting-company_phone" value="0905 123 456" class="w-full border border-slate-300 rounded-xl px-3 py-2 font-medium">
+              </div>
+              <div>
+                <label class="block font-medium text-slate-700 mb-1">Tọa độ cố định (Lat, Lng)</label>
+                <input type="text" readonly value="16.0607, 108.2113" class="w-full border border-slate-200 rounded-xl px-3 py-2 font-mono bg-slate-100 text-slate-600">
+              </div>
+            </div>
+          </div>
+
+          <h3 class="font-bold text-slate-800 text-sm border-b pb-2 pt-2 flex items-center gap-2">
             <i data-lucide="tag" class="w-4 h-4 text-blue-600"></i>
-            1. Bảng giá cước tính theo Km cho Khách hàng
+            2. Bảng giá cước tính theo Km
           </h3>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
               <label class="block font-medium text-slate-700 mb-1">Quãng đường cước mở cửa (km)</label>
               <input type="number" id="setting-base_distance_km" step="0.5" class="w-full border border-slate-300 rounded-xl px-3 py-2">
-              <span class="text-[11px] text-slate-400">Ví dụ: 2 km đầu tiên</span>
             </div>
             <div>
               <label class="block font-medium text-slate-700 mb-1">Giá cước mở cửa (VNĐ)</label>
               <input type="number" id="setting-base_price" step="1000" class="w-full border border-slate-300 rounded-xl px-3 py-2">
-              <span class="text-[11px] text-slate-400">Ví dụ: 16.000 đ</span>
             </div>
 
             <div>
               <label class="block font-medium text-slate-700 mb-1">Mốc km Bậc 1 (km)</label>
               <input type="number" id="setting-tier1_max_km" step="1" class="w-full border border-slate-300 rounded-xl px-3 py-2">
-              <span class="text-[11px] text-slate-400">Từ cước mở cửa đến mốc này (ví dụ 10 km)</span>
             </div>
             <div>
               <label class="block font-medium text-slate-700 mb-1">Đơn giá km Bậc 1 (VNĐ/km)</label>
               <input type="number" id="setting-tier1_rate" step="500" class="w-full border border-slate-300 rounded-xl px-3 py-2">
-              <span class="text-[11px] text-slate-400">Ví dụ: 5.500 đ / km</span>
             </div>
 
             <div class="sm:col-span-2">
-              <label class="block font-medium text-slate-700 mb-1">Đơn giá km Bậc 2 (>10km đường dài) (VNĐ/km)</label>
+              <label class="block font-medium text-slate-700 mb-1">Đơn giá km Bậc 2 (>10km) (VNĐ/km)</label>
               <input type="number" id="setting-tier2_rate" step="500" class="w-full border border-slate-300 rounded-xl px-3 py-2">
-              <span class="text-[11px] text-slate-400">Mức ưu đãi đường dài (ví dụ: 4.500 đ / km)</span>
-            </div>
-          </div>
-
-          <h3 class="font-bold text-slate-800 text-sm border-b pb-2 pt-2 flex items-center gap-2">
-            <i data-lucide="badge-percent" class="w-4 h-4 text-emerald-600"></i>
-            2. Cơ chế tính Lương Chuyến cho Shipper
-          </h3>
-
-          <div class="space-y-3 text-xs">
-            <div>
-              <label class="block font-medium text-slate-700 mb-1">Phương thức tính tiền công chuyến:</label>
-              <select id="setting-salary_calc_method" class="w-full border border-slate-300 rounded-xl px-3 py-2 bg-white font-medium">
-                <option value="trip_percentage">Chia % theo cước chuyến giao (Ví dụ nhận 75% cước)</option>
-                <option value="km_rate">Tính tiền công cố định theo số Km chạy (Ví dụ 4.500đ/km)</option>
-              </select>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block font-medium text-slate-700 mb-1">Tỷ lệ % cước mặc định cho Shipper (%)</label>
-                <input type="number" id="setting-shipper_default_percentage" step="1" class="w-full border border-slate-300 rounded-xl px-3 py-2">
-              </div>
-              <div>
-                <label class="block font-medium text-slate-700 mb-1">Đơn giá công theo km mặc định (VNĐ/km)</label>
-                <input type="number" id="setting-shipper_default_km_rate" step="500" class="w-full border border-slate-300 rounded-xl px-3 py-2">
-              </div>
-            </div>
-          </div>
-
-          <h3 class="font-bold text-slate-800 text-sm border-b pb-2 pt-2 flex items-center gap-2">
-            <i data-lucide="building" class="w-4 h-4 text-purple-600"></i>
-            3. Thông tin Công ty
-          </h3>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div>
-              <label class="block font-medium text-slate-700 mb-1">Tên công ty / Đơn vị</label>
-              <input type="text" id="setting-company_name" class="w-full border border-slate-300 rounded-xl px-3 py-2">
-            </div>
-            <div>
-              <label class="block font-medium text-slate-700 mb-1">Hotline liên hệ</label>
-              <input type="text" id="setting-company_phone" class="w-full border border-slate-300 rounded-xl px-3 py-2">
             </div>
           </div>
 
@@ -573,11 +577,11 @@
       </section>
 
       <!-- ======================================================== -->
-      <!-- VIEW 7: GIAO DIỆN APP ĐIỆN THOẠI DÀNH CHO TÀI XẾ (DRIVER APP) -->
+      <!-- VIEW 7: GIAO DIỆN APP ĐIỆN THOẠI CHO TÀI XẾ (DRIVER APP) -->
       <!-- ======================================================== -->
       <section id="view-shipper-mobile" class="space-y-4 max-w-lg mx-auto">
         <!-- Driver Profile Header Card -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-3xl text-white shadow-lg space-y-3">
+        <div class="bg-gradient-to-r from-blue-700 to-indigo-700 p-4 rounded-3xl text-white shadow-lg space-y-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-3">
               <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-base shadow-inner">
@@ -585,7 +589,7 @@
               </div>
               <div>
                 <h3 id="driver-app-name" class="font-extrabold text-base leading-tight">Tài xế</h3>
-                <p id="driver-app-plate" class="text-xs text-blue-100 font-mono">59-XX XXX.XX</p>
+                <p id="driver-app-plate" class="text-xs text-blue-100 font-mono">43-XX XXX.XX</p>
               </div>
             </div>
             
@@ -594,15 +598,24 @@
             </button>
           </div>
 
-          <!-- Quick status indicator -->
-          <div class="flex items-center justify-between bg-black/20 p-2.5 rounded-2xl text-xs">
-            <span class="flex items-center gap-1.5 font-medium text-emerald-300">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Đang hoạt động nhận đơn
+          <!-- Fixed Base Hub Badge -->
+          <div class="bg-black/25 p-2.5 rounded-2xl text-[11px] flex items-center justify-between">
+            <span class="flex items-center gap-1.5 font-bold text-amber-300">
+              <i data-lucide="building" class="w-3.5 h-3.5 text-amber-300"></i>
+              ROSI: 29 Đặng Thai Mai, Đà Nẵng
             </span>
-            <span class="text-blue-100 text-[11px]" id="driver-app-phone">0912...</span>
+            <span class="text-emerald-300 font-semibold flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Sẵn sàng
+            </span>
           </div>
         </div>
+
+        <!-- NÚT TÀI XẾ TẠO CHUYẾN ĐI NHANH TRÊN ĐIỆN THOẠI -->
+        <button onclick="openDriverQuickOrderModal()" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-2 transition">
+          <i data-lucide="plus-circle" class="w-5 h-5"></i>
+          <span>TẠO CHUYẾN ĐI GIAO / NHẬN HÀNG MỚI</span>
+        </button>
 
         <!-- Today summary cards for driver -->
         <div class="grid grid-cols-3 gap-2 text-center text-xs">
@@ -630,14 +643,13 @@
           </button>
         </div>
 
-        <!-- Danh sách đơn của shipper -->
         <div id="shipper-orders-container" class="space-y-3"></div>
       </section>
 
     </main>
   </div>
 
-  <!-- MOBILE BOTTOM NAVIGATION BAR CHO GIÁM ĐỐC KHI DÙNG TRÊN ĐIỆN THOẠI -->
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
   <nav id="mobile-nav" class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-1.5 flex justify-around items-center z-40 shadow-lg">
     <button onclick="navigateView('dashboard')" id="m-nav-dashboard" class="flex flex-col items-center text-blue-600 text-[10px] font-medium py-1">
       <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
@@ -662,15 +674,15 @@
   </nav>
 
   <!-- ======================================================== -->
-  <!-- MODAL: TẠO ĐƠN HÀNG MỚI -->
+  <!-- MODAL: TẠO ĐƠN HÀNG MỚI (CHO GIÁM ĐỐC) -->
   <!-- ======================================================== -->
   <div id="modal-create-order" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-3 overflow-y-auto">
-    <div class="bg-white rounded-2xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div class="bg-white rounded-3xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
       
       <div class="px-5 py-3.5 bg-blue-600 text-white flex items-center justify-between flex-shrink-0">
         <h3 class="font-bold text-sm flex items-center gap-2">
           <i data-lucide="package-plus" class="w-4 h-4"></i>
-          Tạo đơn giao hàng mới
+          Tạo đơn giao nhận - ROSI VIỆT NAM
         </h3>
         <button onclick="closeModal('modal-create-order')" class="p-1 rounded-lg hover:bg-white/20 transition">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -679,46 +691,65 @@
 
       <div class="p-5 overflow-y-auto space-y-4 text-xs flex-1">
         
+        <!-- Chọn chiều di chuyển -->
+        <div class="bg-blue-50 p-3 rounded-2xl border border-blue-200 space-y-1.5">
+          <p class="font-bold text-blue-900">Chiều giao nhận:</p>
+          <div class="grid grid-cols-2 gap-2 text-xs font-bold">
+            <button type="button" id="modal-mode-delivery" onclick="setOrderModalDirection('delivery')" class="py-2 rounded-xl bg-blue-600 text-white text-center">
+              Đi giao từ Cty ROSI ➔ Khách
+            </button>
+            <button type="button" id="modal-mode-pickup" onclick="setOrderModalDirection('pickup')" class="py-2 rounded-xl bg-white text-slate-700 border border-slate-300 text-center">
+              Đi nhận từ Khách ➔ Về ROSI
+            </button>
+          </div>
+        </div>
+
         <!-- Thông tin người gửi -->
-        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
-          <h4 class="font-bold text-emerald-700 flex items-center gap-1.5">
-            <i data-lucide="circle-dot" class="w-3.5 h-3.5"></i>
-            1. Điểm lấy hàng (Người gửi)
+        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+          <h4 class="font-bold text-emerald-700 flex items-center justify-between">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="circle-dot" class="w-3.5 h-3.5"></i>
+              1. Điểm lấy hàng
+            </span>
+            <span id="sender-fixed-tag" class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-semibold">Trụ sở cố định</span>
           </h4>
           <div class="grid grid-cols-2 gap-2">
-            <input type="text" id="order-sender-name" placeholder="Tên người gửi / Cửa hàng" class="border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white">
-            <input type="text" id="order-sender-phone" placeholder="Số điện thoại người gửi" class="border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white">
+            <input type="text" id="order-sender-name" value="CÔNG TY TNHH ROSI VIỆT NAM" class="border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-semibold">
+            <input type="text" id="order-sender-phone" value="0905 123 456" class="border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white">
           </div>
           <div class="relative">
-            <input type="text" id="order-sender-address" placeholder="Địa chỉ lấy hàng cụ thể" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white" oninput="debounceGeocode(this, 'sender')">
+            <input type="text" id="order-sender-address" value="29 Đặng Thai Mai, Phường Vĩnh Trung, Quận Thanh Khê, Thành phố Đà Nẵng" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white" oninput="debounceGeocode(this, 'sender')">
             <div id="suggest-sender" class="autocomplete-dropdown hidden"></div>
           </div>
         </div>
 
         <!-- Thông tin người nhận -->
-        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
-          <h4 class="font-bold text-rose-700 flex items-center gap-1.5">
-            <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-            2. Điểm giao hàng (Người nhận)
+        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+          <h4 class="font-bold text-rose-700 flex items-center justify-between">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+              2. Điểm giao hàng
+            </span>
+            <span id="receiver-fixed-tag" class="text-[10px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded-md font-semibold hidden">Trụ sở cố định</span>
           </h4>
           <div class="grid grid-cols-2 gap-2">
-            <input type="text" id="order-receiver-name" placeholder="Tên người nhận" class="border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white">
-            <input type="text" id="order-receiver-phone" placeholder="Số điện thoại người nhận" class="border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white">
+            <input type="text" id="order-receiver-name" placeholder="Tên khách hàng" class="border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-medium">
+            <input type="text" id="order-receiver-phone" placeholder="Số điện thoại khách hàng" class="border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white">
           </div>
           <div class="relative">
-            <input type="text" id="order-receiver-address" placeholder="Địa chỉ giao hàng cụ thể" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white" oninput="debounceGeocode(this, 'receiver')">
+            <input type="text" id="order-receiver-address" placeholder="Nhập địa chỉ nhận tại Đà Nẵng (ví dụ: 120 Nguyễn Văn Linh...)" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white" oninput="debounceGeocode(this, 'receiver')">
             <div id="suggest-receiver" class="autocomplete-dropdown hidden"></div>
           </div>
         </div>
 
         <div class="flex items-center gap-2">
-          <button type="button" onclick="autoCalculateOrderDistance()" class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-2 px-3 rounded-xl border border-blue-200 flex items-center justify-center gap-1.5 transition">
+          <button type="button" onclick="autoCalculateOrderDistance()" class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-2.5 px-3 rounded-xl border border-blue-200 flex items-center justify-center gap-1.5 transition">
             <i data-lucide="navigation" class="w-4 h-4"></i>
-            <span>Tự động tính quãng đường (Km) & Giá cước</span>
+            <span>Tự động đo quãng đường (Km) từ 29 Đặng Thai Mai & Tính cước</span>
           </button>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 bg-blue-50/70 p-3 rounded-xl border border-blue-200">
+        <div class="grid grid-cols-2 gap-2 bg-blue-50/70 p-3 rounded-2xl border border-blue-200">
           <div>
             <label class="block font-medium text-slate-700 mb-0.5">Quãng đường (km)</label>
             <input type="number" id="order-distance-km" step="0.1" class="w-full font-bold text-blue-700 border border-blue-300 rounded-lg px-2.5 py-1.5 bg-white" oninput="recalcFeeFromManualKm()">
@@ -732,7 +763,7 @@
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block font-medium text-slate-700 mb-0.5">Tên hàng / Kiện hàng</label>
-            <input type="text" id="order-item-name" value="Hàng tiêu dùng" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white">
+            <input type="text" id="order-item-name" value="Sản phẩm ROSI" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-medium">
           </div>
           <div>
             <label class="block font-medium text-slate-700 mb-0.5">Tiền thu hộ COD (VNĐ)</label>
@@ -766,14 +797,107 @@
   </div>
 
   <!-- ======================================================== -->
+  <!-- MODAL: TÀI XẾ TẠO CHUYẾN ĐI NHANH TRÊN ĐIỆN THOẠI -->
+  <!-- ======================================================== -->
+  <div id="modal-driver-quick-order" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-3 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-sm w-full flex flex-col shadow-2xl overflow-hidden">
+      
+      <div class="px-5 py-3.5 bg-emerald-600 text-white flex items-center justify-between flex-shrink-0">
+        <h3 class="font-extrabold text-xs flex items-center gap-1.5">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          Tài xế tạo chuyến đi nhận / giao
+        </h3>
+        <button onclick="closeModal('modal-driver-quick-order')" class="p-1 rounded-lg hover:bg-white/20 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-4 space-y-3 text-xs">
+        <!-- Radio chọn loại chuyến -->
+        <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
+          <div class="grid grid-cols-2 gap-2 text-center font-bold">
+            <button type="button" id="d-quick-delivery" onclick="setDriverTripDirection('delivery')" class="py-2 rounded-xl bg-emerald-600 text-white">
+              Đi giao cho khách
+            </button>
+            <button type="button" id="d-quick-pickup" onclick="setDriverTripDirection('pickup')" class="py-2 rounded-xl bg-white text-slate-600 border">
+              Đi nhận về Cty
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-emerald-50 p-2.5 rounded-2xl border border-emerald-200 text-[11px] text-emerald-900 font-semibold flex items-center gap-1.5">
+          <i data-lucide="building" class="w-4 h-4 text-emerald-600"></i>
+          <span>Trụ sở: 29 Đặng Thai Mai, Thanh Khê, Đà Nẵng</span>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1" id="d-target-label">Địa chỉ khách hàng tại Đà Nẵng *</label>
+          <div class="relative">
+            <input type="text" id="d-quick-address" placeholder="Nhập số nhà, tên đường (vd: 120 Nguyễn Văn Linh...)" class="w-full border border-slate-300 rounded-xl px-3 py-2 bg-white font-medium" oninput="debounceGeocode(this, 'driver-quick')">
+            <div id="suggest-driver-quick" class="autocomplete-dropdown hidden"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-medium text-slate-700 mb-0.5">Tên khách hàng</label>
+            <input type="text" id="d-quick-name" placeholder="Anh/Chị..." class="w-full border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white">
+          </div>
+          <div>
+            <label class="block font-medium text-slate-700 mb-0.5">SĐT khách</label>
+            <input type="tel" id="d-quick-phone" placeholder="0905..." class="w-full border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-medium text-slate-700 mb-0.5">Tiền thu hộ COD</label>
+            <input type="number" id="d-quick-cod" value="0" step="10000" class="w-full border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white font-bold">
+          </div>
+          <div>
+            <label class="block font-medium text-slate-700 mb-0.5">Ghi chú</label>
+            <input type="text" id="d-quick-notes" placeholder="Ghi chú đơn..." class="w-full border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white">
+          </div>
+        </div>
+
+        <!-- Nút đo km & tính tiền -->
+        <button type="button" onclick="autoCalculateDriverQuickOrder()" class="w-full py-2 bg-blue-50 text-blue-700 font-bold rounded-xl border border-blue-200 flex items-center justify-center gap-1">
+          <i data-lucide="navigation" class="w-4 h-4"></i>
+          <span>Tự động đo quãng đường từ 29 Đặng Thai Mai</span>
+        </button>
+
+        <div class="grid grid-cols-2 gap-2 text-center bg-slate-50 p-2.5 rounded-2xl border">
+          <div>
+            <span class="text-[10px] text-slate-400">Quãng đường</span>
+            <p id="d-quick-dist" class="font-extrabold text-blue-700 text-sm">-- km</p>
+          </div>
+          <div>
+            <span class="text-[10px] text-slate-400">Tiền công nhận</span>
+            <p id="d-quick-earn" class="font-extrabold text-emerald-700 text-sm">-- đ</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex justify-end space-x-2">
+        <button onclick="closeModal('modal-driver-quick-order')" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 font-medium text-xs">Hủy</button>
+        <button onclick="submitDriverQuickOrder()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md">
+          Nhận Chuyến Đi Ngay
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
   <!-- MODAL: CHI TIẾT ĐƠN HÀNG -->
   <!-- ======================================================== -->
   <div id="modal-order-detail" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-3 overflow-y-auto">
-    <div class="bg-white rounded-2xl max-w-lg w-full flex flex-col shadow-2xl overflow-hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full flex flex-col shadow-2xl overflow-hidden">
       <div class="px-5 py-3.5 bg-blue-600 text-white flex items-center justify-between">
         <h3 class="font-bold text-sm flex items-center gap-2">
           <i data-lucide="file-text" class="w-4 h-4"></i>
-          Chi tiết đơn hàng: <span id="dt-order-code" class="font-mono">GN-XXXX</span>
+          Chi tiết đơn: <span id="dt-order-code" class="font-mono">ROSI-XXXX</span>
         </h3>
         <button onclick="closeModal('modal-order-detail')" class="p-1 rounded-lg hover:bg-white/20 transition">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -789,7 +913,7 @@
   <!-- MODAL: THÊM / SỬA NHÂN VIÊN GIAO NHẬN -->
   <!-- ======================================================== -->
   <div id="modal-shipper" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-3 overflow-y-auto">
-    <div class="bg-white rounded-2xl max-w-md w-full flex flex-col shadow-2xl overflow-hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full flex flex-col shadow-2xl overflow-hidden">
       <div class="px-5 py-3.5 bg-blue-600 text-white flex items-center justify-between">
         <h3 id="shipper-modal-title" class="font-bold text-sm flex items-center gap-2">
           <i data-lucide="user-plus" class="w-4 h-4"></i>
@@ -819,8 +943,8 @@
 
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block font-medium text-slate-700 mb-0.5">Biển số xe</label>
-            <input type="text" id="shipper-form-plate" placeholder="59-X1 123.45" class="w-full border border-slate-300 rounded-lg px-2.5 py-2 bg-white">
+            <label class="block font-medium text-slate-700 mb-0.5">Biển số xe (Đà Nẵng: 43-...)</label>
+            <input type="text" id="shipper-form-plate" placeholder="43-C1 123.45" class="w-full border border-slate-300 rounded-lg px-2.5 py-2 bg-white">
           </div>
           <div>
             <label class="block font-medium text-slate-700 mb-0.5">Loại phương tiện</label>
@@ -837,7 +961,7 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block font-medium text-slate-700 mb-0.5">Lương cơ bản (VNĐ)</label>
-              <input type="number" id="shipper-form-base-salary" value="3000000" step="500000" class="w-full border border-slate-300 rounded-lg px-2.5 py-2 bg-white">
+              <input type="number" id="shipper-form-base-salary" value="3500000" step="500000" class="w-full border border-slate-300 rounded-lg px-2.5 py-2 bg-white">
             </div>
             <div>
               <label class="block font-medium text-slate-700 mb-0.5">Phụ cấp xăng/ĐT (VNĐ)</label>
@@ -869,7 +993,7 @@
   <!-- MODAL: THÊM THƯỞNG / PHẠT LƯƠNG THÁNG -->
   <!-- ======================================================== -->
   <div id="modal-adjustment" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-3 overflow-y-auto">
-    <div class="bg-white rounded-2xl max-w-sm w-full flex flex-col shadow-2xl overflow-hidden">
+    <div class="bg-white rounded-3xl max-w-sm w-full flex flex-col shadow-2xl overflow-hidden">
       <div class="px-5 py-3.5 bg-blue-600 text-white flex items-center justify-between">
         <h3 class="font-bold text-sm flex items-center gap-2">
           <i data-lucide="award" class="w-4 h-4"></i>
@@ -906,14 +1030,14 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- MODAL: IN PHIẾU LƯƠNG CHI TIẾT -->
+  <!-- MODAL: IN PHIẾU LƯƠNG CHI TIẾT (CHUẨN ROSI VIỆT NAM) -->
   <!-- ======================================================== -->
   <div id="modal-salary-slip" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-3 overflow-y-auto">
-    <div class="bg-white rounded-2xl max-w-2xl w-full flex flex-col shadow-2xl overflow-hidden max-h-[90vh]">
+    <div class="bg-white rounded-3xl max-w-2xl w-full flex flex-col shadow-2xl overflow-hidden max-h-[90vh]">
       <div class="px-5 py-3.5 bg-blue-600 text-white flex items-center justify-between no-print">
         <h3 class="font-bold text-sm flex items-center gap-2">
           <i data-lucide="printer" class="w-4 h-4"></i>
-          Phiếu lương nhân viên
+          Phiếu lương nhân viên ROSI
         </h3>
         <div class="flex items-center space-x-2">
           <button onclick="window.print()" class="px-3 py-1 bg-white text-blue-700 hover:bg-blue-50 font-bold text-xs rounded-lg flex items-center gap-1 shadow-sm">
@@ -931,14 +1055,14 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- MODAL: HƯỚNG DẪN KẾT NỐI ĐIỆN THOẠI (WI-FI LAN & PWA) -->
+  <!-- MODAL: HƯỚNG DẪN KẾT NỐI ĐIỆN THOẠI -->
   <!-- ======================================================== -->
   <div id="modal-phone-connect" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-3 overflow-y-auto">
-    <div class="bg-white rounded-2xl max-w-md w-full flex flex-col shadow-2xl overflow-hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full flex flex-col shadow-2xl overflow-hidden">
       <div class="px-5 py-3.5 bg-blue-600 text-white flex items-center justify-between">
         <h3 class="font-bold text-sm flex items-center gap-2">
           <i data-lucide="smartphone" class="w-4 h-4"></i>
-          Mở phần mềm trên điện thoại
+          Mở ứng dụng trên điện thoại
         </h3>
         <button onclick="closeModal('modal-phone-connect')" class="p-1 rounded-lg hover:bg-white/20 transition">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -946,24 +1070,20 @@
       </div>
 
       <div class="p-5 space-y-4 text-xs">
-        <div class="bg-blue-50 p-3.5 rounded-xl border border-blue-200 space-y-2">
-          <p class="font-bold text-blue-900">Cách tài xế mở trên iPhone hoặc Android:</p>
-          <ol class="list-decimal list-inside space-y-1 text-slate-700">
-            <li>Kết nối điện thoại vào <b>cùng mạng Wi-Fi</b> với máy tính này.</li>
-            <li>Mở trình duyệt (Safari hoặc Chrome) trên điện thoại và gõ địa chỉ:</li>
-          </ol>
-          <div class="bg-white p-2.5 rounded-lg border border-blue-300 font-mono text-center text-sm font-bold text-blue-700 select-all" id="phone-access-url">
-            http://192.168.1.25:3000
+        <div class="bg-blue-50 p-3.5 rounded-2xl border border-blue-200 space-y-2">
+          <p class="font-bold text-blue-900">Địa chỉ Online 24/7 (Dùng 4G/5G hoặc Wi-Fi):</p>
+          <div class="bg-white p-2.5 rounded-xl border border-blue-300 font-mono text-center text-sm font-bold text-blue-700 select-all">
+            https://giaonhan-app.onrender.com
           </div>
+          <p class="text-[11px] text-slate-500">Tài xế đi ngoài đường tại Đà Nẵng chỉ cần mở link này là vào app.</p>
         </div>
 
         <div class="space-y-2">
-          <p class="font-bold text-slate-800">Cài đặt thành App độc lập trên màn hình chính:</p>
+          <p class="font-bold text-slate-800">Cài đặt icon ra màn hình chính:</p>
           <div class="space-y-1 text-slate-600">
-            <p>• <b>Trên iPhone (Safari):</b> Bấm nút Chia sẻ (biểu tượng mũi tên đi lên) ➔ Chọn <b>"Thêm vào Màn hình chính" (Add to Home Screen)</b>.</p>
-            <p>• <b>Trên Android (Chrome):</b> Bấm dấu 3 chấm góc phải ➔ Chọn <b>"Cài đặt ứng dụng"</b> hoặc <b>"Thêm vào Màn hình chính"</b>.</p>
+            <p>• <b>Trên iPhone (Safari):</b> Bấm nút Chia sẻ ➔ Chọn <b>"Thêm vào Màn hình chính"</b>.</p>
+            <p>• <b>Trên Android (Chrome):</b> Bấm dấu 3 chấm ➔ Chọn <b>"Thêm vào Màn hình chính"</b>.</p>
           </div>
-          <p class="text-[11px] text-emerald-600 font-medium">Sau khi thêm, icon phần mềm sẽ hiển thị trên màn hình như 1 app tải từ AppStore/CH Play!</p>
         </div>
       </div>
 

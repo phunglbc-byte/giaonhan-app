@@ -1,21 +1,36 @@
 // =============================================================================
-// GiaoNhanApp - Frontend Application Logic
+// CÔNG TY TNHH ROSI VIỆT NAM - Quản Lý Giao Nhận & Tính Lương Theo Km
+// Trụ sở cố định: 29 Đặng Thai Mai, P. Vĩnh Trung, Q. Thanh Khê, TP. Đà Nẵng
 // =============================================================================
 
+const ROSI_HUB = {
+  name: 'CÔNG TY TNHH ROSI VIỆT NAM',
+  address: '29 Đặng Thai Mai, Phường Vĩnh Trung, Quận Thanh Khê, Thành phố Đà Nẵng',
+  phone: '0905 123 456',
+  lat: 16.0607366,
+  lng: 108.2112765
+};
+
 let appState = {
-  currentUser: null, // { id, name, phone, username, role, ... }
-  userRole: null,    // 'admin' | 'shipper'
+  currentUser: null,
+  userRole: null,
   currentView: 'dashboard',
   orders: [],
   shippers: [],
   settings: {},
-  activeShipperTab: 'active', // 'active' | 'history'
+  activeShipperTab: 'active',
   orderFilter: 'all',
   
-  // Route Map State
+  // Trip mode: 'delivery' (Cty -> Khách) | 'pickup' (Khách -> Cty)
+  routeTripMode: 'delivery',
+  driverTripMode: 'delivery',
+  modalOrderDirection: 'delivery',
+
+  // Map state
   map: null,
   startMarker: null,
   endMarker: null,
+  hubMarker: null,
   routePolyline: null,
   calcData: {
     start: null,
@@ -24,10 +39,16 @@ let appState = {
     durationMin: 0,
     shippingFee: 0,
     shipperEarning: 0
+  },
+
+  // Driver quick order temporary data
+  driverQuickCalc: {
+    distanceKm: 0,
+    shippingFee: 0,
+    earning: 0
   }
 };
 
-// Formatting helpers
 function formatVND(amount) {
   if (amount === undefined || amount === null) return '0 đ';
   return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + ' đ';
@@ -57,7 +78,7 @@ function getStatusBadge(status) {
 }
 
 // -----------------------------------------------------------------------------
-// 1. AUTHENTICATION & ROLE MANAGEMENT
+// 1. AUTHENTICATION & LOGIN SESSIONS
 // -----------------------------------------------------------------------------
 function switchLoginRole(role) {
   const adminTab = document.getElementById('tab-login-admin');
@@ -128,13 +149,9 @@ function applyLoginSession(role, user) {
   appState.userRole = role;
   appState.currentUser = user;
 
-  // Persist session in localStorage
   localStorage.setItem('giaonhan_auth', JSON.stringify({ role, user }));
-
-  // Hide login screen
   document.getElementById('login-screen').classList.add('hidden');
 
-  // Update header
   const headerName = document.getElementById('header-user-name');
   if (role === 'admin') {
     headerName.innerHTML = `👑 Giám Đốc: <b class="font-bold text-white">${user.name}</b>`;
@@ -145,7 +162,7 @@ function applyLoginSession(role, user) {
     loadOrders();
     loadDashboardSummary();
   } else {
-    headerName.innerHTML = `🏍️ Xế: <b class="font-bold text-white">${user.name}</b>`;
+    headerName.innerHTML = `🏍️ Xế ROSI: <b class="font-bold text-white">${user.name}</b>`;
     document.getElementById('desktop-sidebar').classList.add('hidden');
     document.getElementById('mobile-nav').classList.add('hidden');
     navigateView('shipper-mobile');
@@ -180,7 +197,7 @@ function checkSavedSession() {
 }
 
 // -----------------------------------------------------------------------------
-// 2. NAVIGATION (DÀNH CHO GIÁM ĐỐC / ADMIN)
+// 2. NAVIGATION (CHO GIÁM ĐỐC)
 // -----------------------------------------------------------------------------
 function navigateView(viewName) {
   appState.currentView = viewName;
@@ -194,7 +211,6 @@ function navigateView(viewName) {
   const targetView = document.getElementById(`view-${viewName}`);
   if (targetView) targetView.classList.remove('hidden');
 
-  // Update desktop nav buttons
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.classList.remove('active', 'text-blue-600', 'bg-blue-50');
     btn.classList.add('text-slate-600');
@@ -205,7 +221,6 @@ function navigateView(viewName) {
     activeDesktopBtn.classList.remove('text-slate-600');
   }
 
-  // Update mobile nav buttons
   document.querySelectorAll('#mobile-nav button').forEach(btn => {
     btn.classList.remove('text-blue-600');
     btn.classList.add('text-slate-500');
@@ -234,7 +249,7 @@ function navigateView(viewName) {
 }
 
 // -----------------------------------------------------------------------------
-// 3. DASHBOARD VIEW (BAN GIÁM ĐỐC)
+// 3. DASHBOARD VIEW (BAN GIÁM ĐỐC ROSI)
 // -----------------------------------------------------------------------------
 async function loadDashboardSummary() {
   try {
@@ -248,7 +263,7 @@ async function loadDashboardSummary() {
       document.getElementById('stat-total-revenue').textContent = formatVND(s.total_revenue || 0);
       document.getElementById('stat-shipper-earning').textContent = `Lương xế: ${formatVND(s.total_shipper_earning || 0)}`;
       document.getElementById('stat-active-shippers').textContent = s.active_shippers || 0;
-      document.getElementById('stat-delivering-count').textContent = `${s.delivering_orders || 0} đơn đang giao`;
+      document.getElementById('stat-delivering-count').textContent = `${s.delivering_orders || 0} đơn đang chạy`;
     }
 
     const ordersRes = await fetch('/api/orders');
@@ -272,7 +287,7 @@ function renderRecentOrders(recent) {
   container.innerHTML = recent.map(o => `
     <div class="p-3.5 hover:bg-slate-50 transition flex items-center justify-between cursor-pointer" onclick="openOrderDetailModal(${o.id})">
       <div class="flex items-center space-x-3">
-        <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+        <div class="w-9 h-9 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
           ${o.order_code.slice(-4)}
         </div>
         <div>
@@ -337,10 +352,10 @@ function renderOrdersList(orders) {
   }
 
   container.innerHTML = orders.map(o => `
-    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition space-y-3">
+    <div class="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition space-y-3">
       <div class="flex items-center justify-between border-b border-slate-100 pb-2">
         <div class="flex items-center space-x-2">
-          <span class="font-bold text-xs text-blue-700 font-mono">${o.order_code}</span>
+          <span class="font-extrabold text-xs text-blue-700 font-mono">${o.order_code}</span>
           ${getStatusBadge(o.status)}
         </div>
         <span class="text-[11px] text-slate-400">${formatDate(o.created_at)}</span>
@@ -364,7 +379,7 @@ function renderOrdersList(orders) {
         </div>
       </div>
 
-      <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 grid grid-cols-3 gap-2 text-center text-xs">
+      <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 grid grid-cols-3 gap-2 text-center text-xs">
         <div>
           <span class="text-slate-400 text-[10px]">Quãng đường</span>
           <p class="font-bold text-slate-800">${o.distance_km} km</p>
@@ -382,7 +397,7 @@ function renderOrdersList(orders) {
       <div class="flex items-center justify-between pt-1">
         <div class="text-xs">
           ${o.shipper_name ? `
-            <span class="text-slate-600 flex items-center gap-1">
+            <span class="text-slate-600 flex items-center gap-1 font-medium">
               <i data-lucide="bike" class="w-3.5 h-3.5 text-blue-600"></i>
               <b>${o.shipper_name}</b>
             </span>
@@ -394,7 +409,7 @@ function renderOrdersList(orders) {
           `}
         </div>
 
-        <button onclick="openOrderDetailModal(${o.id})" class="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold text-xs transition flex items-center gap-1">
+        <button onclick="openOrderDetailModal(${o.id})" class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold text-xs transition flex items-center gap-1">
           <span>Chi tiết</span>
           <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
         </button>
@@ -406,7 +421,7 @@ function renderOrdersList(orders) {
 }
 
 // -----------------------------------------------------------------------------
-// 5. MAP & ROUTE DISTANCE CALCULATOR (OSRM ENGINE)
+// 5. MAP & ROUTE DISTANCE CALCULATOR (CỐ ĐỊNH TẠI ĐÀ NẴNG)
 // -----------------------------------------------------------------------------
 function initMapIfNeeded() {
   if (appState.map) {
@@ -414,26 +429,73 @@ function initMapIfNeeded() {
     return;
   }
 
-  const defaultCenter = [10.7769, 106.7009];
-  appState.map = L.map('map').setView(defaultCenter, 13);
+  // Tọa độ trung tâm: 29 Đặng Thai Mai, Thanh Khê, Đà Nẵng
+  const daNangCenter = [ROSI_HUB.lat, ROSI_HUB.lng];
+  appState.map = L.map('map').setView(daNangCenter, 14);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap contributors'
   }).addTo(appState.map);
 
+  // Đặt sẵn ghim cố định cho ROSI VIỆT NAM (29 Đặng Thai Mai)
+  appState.calcData.start = {
+    lat: ROSI_HUB.lat,
+    lng: ROSI_HUB.lng,
+    address: ROSI_HUB.address
+  };
+
+  setMapStartPoint(ROSI_HUB.lat, ROSI_HUB.lng, ROSI_HUB.address);
+
+  // Cho phép click lên bản đồ để chọn điểm khách hàng tại Đà Nẵng
   appState.map.on('click', (e) => {
     const { lat, lng } = e.latlng;
-    if (!appState.startMarker) {
-      setMapStartPoint(lat, lng, `Tọa độ: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-    } else if (!appState.endMarker) {
-      setMapEndPoint(lat, lng, `Tọa độ: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+    if (appState.routeTripMode === 'delivery') {
+      setMapEndPoint(lat, lng, `Tọa độ Đà Nẵng: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
       calculateRouteOnMap();
     } else {
-      setMapEndPoint(lat, lng, `Tọa độ: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+      setMapStartPoint(lat, lng, `Tọa độ Đà Nẵng: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
       calculateRouteOnMap();
     }
   });
+}
+
+function setRouteTripMode(mode) {
+  appState.routeTripMode = mode;
+  const btnDelivery = document.getElementById('btn-mode-delivery');
+  const btnPickup = document.getElementById('btn-mode-pickup');
+  const badgeFrom = document.getElementById('badge-from-fixed');
+  const badgeTo = document.getElementById('badge-to-fixed');
+
+  const fromInput = document.getElementById('calc-from-address');
+  const toInput = document.getElementById('calc-to-address');
+
+  if (mode === 'delivery') {
+    btnDelivery.className = 'py-2 px-2.5 rounded-xl bg-blue-600 text-white shadow-xs text-center flex items-center justify-center gap-1 font-bold';
+    btnPickup.className = 'py-2 px-2.5 rounded-xl bg-white text-slate-700 border border-slate-200 text-center flex items-center justify-center gap-1 font-bold';
+    badgeFrom.classList.remove('hidden');
+    badgeTo.classList.add('hidden');
+
+    fromInput.value = ROSI_HUB.address;
+    fromInput.readOnly = true;
+    toInput.readOnly = false;
+    toInput.placeholder = 'Nhập địa chỉ khách nhận tại Đà Nẵng...';
+
+    setMapStartPoint(ROSI_HUB.lat, ROSI_HUB.lng, ROSI_HUB.address);
+  } else {
+    btnPickup.className = 'py-2 px-2.5 rounded-xl bg-blue-600 text-white shadow-xs text-center flex items-center justify-center gap-1 font-bold';
+    btnDelivery.className = 'py-2 px-2.5 rounded-xl bg-white text-slate-700 border border-slate-200 text-center flex items-center justify-center gap-1 font-bold';
+    badgeFrom.classList.add('hidden');
+    badgeTo.classList.remove('hidden');
+
+    toInput.value = ROSI_HUB.address;
+    toInput.readOnly = true;
+    fromInput.readOnly = false;
+    fromInput.value = '';
+    fromInput.placeholder = 'Nhập địa chỉ nơi nhận hàng tại Đà Nẵng...';
+
+    setMapEndPoint(ROSI_HUB.lat, ROSI_HUB.lng, ROSI_HUB.address);
+  }
 }
 
 function createPinIcon(type, text) {
@@ -451,7 +513,7 @@ function setMapStartPoint(lat, lng, address) {
   appState.startMarker = L.marker([lat, lng], { icon: createPinIcon('start', 'A'), draggable: true }).addTo(appState.map);
   appState.calcData.start = { lat, lng, address };
   document.getElementById('calc-from-coords').textContent = `Tọa độ: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-  if (address && !address.startsWith('Tọa độ:')) {
+  if (address && !address.startsWith('Tọa độ')) {
     document.getElementById('calc-from-address').value = address;
   }
 
@@ -469,7 +531,7 @@ function setMapEndPoint(lat, lng, address) {
   appState.endMarker = L.marker([lat, lng], { icon: createPinIcon('end', 'B'), draggable: true }).addTo(appState.map);
   appState.calcData.end = { lat, lng, address };
   document.getElementById('calc-to-coords').textContent = `Tọa độ: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-  if (address && !address.startsWith('Tọa độ:')) {
+  if (address && !address.startsWith('Tọa độ')) {
     document.getElementById('calc-to-address').value = address;
   }
 
@@ -484,19 +546,24 @@ function setMapEndPoint(lat, lng, address) {
 async function searchAddress(type) {
   const input = document.getElementById(type === 'from' ? 'calc-from-address' : 'calc-to-address');
   const dropdown = document.getElementById(type === 'from' ? 'autocomplete-from' : 'autocomplete-to');
-  const query = input.value.trim();
+  const rawQuery = input.value.trim();
 
-  if (!query) return;
+  if (!rawQuery) return;
+
+  // Tự động gắn hậu tố Đà Nẵng nếu người dùng chưa gõ
+  const query = rawQuery.toLowerCase().includes('đà nẵng') || rawQuery.toLowerCase().includes('da nang') 
+    ? rawQuery 
+    : `${rawQuery}, Đà Nẵng`;
 
   try {
-    dropdown.innerHTML = '<div class="p-2 text-xs text-slate-400">Đang tìm kiếm địa chỉ...</div>';
+    dropdown.innerHTML = '<div class="p-2 text-xs text-slate-400">Đang tìm địa chỉ tại Đà Nẵng...</div>';
     dropdown.classList.remove('hidden');
 
     const res = await fetch(`/api/geocode/search?q=${encodeURIComponent(query)}`);
     const results = await res.json();
 
     if (!results || results.length === 0) {
-      dropdown.innerHTML = '<div class="p-2 text-xs text-slate-400">Không tìm thấy địa chỉ phù hợp</div>';
+      dropdown.innerHTML = '<div class="p-2 text-xs text-slate-400">Không tìm thấy địa chỉ tại Đà Nẵng</div>';
       return;
     }
 
@@ -566,8 +633,8 @@ async function calculateRouteOnMap() {
     appState.calcData.shippingFee = d.shipping_fee;
     appState.calcData.shipperEarning = Math.round(d.shipping_fee * 0.75);
 
-    setMapStartPoint(d.start_point.lat, d.start_point.lng, fromAddr || 'Điểm lấy hàng');
-    setMapEndPoint(d.end_point.lat, d.end_point.lng, toAddr || 'Điểm giao hàng');
+    setMapStartPoint(d.start_point.lat, d.start_point.lng, fromAddr || ROSI_HUB.address);
+    setMapEndPoint(d.end_point.lat, d.end_point.lng, toAddr || 'Khách hàng');
 
     if (appState.routePolyline) appState.map.removeLayer(appState.routePolyline);
 
@@ -589,8 +656,8 @@ async function calculateRouteOnMap() {
     document.getElementById('res-shipper-earning').textContent = `Công xế nhận: ${formatVND(appState.calcData.shipperEarning)}`;
 
     document.getElementById('res-breakdown').innerHTML = `
-      <p>• <b>Phương thức:</b> Tuyến đường thực tế qua OSRM Engine</p>
-      <p>• <b>Đơn giá:</b> Cước mở cửa + Lũy tiến theo số km</p>
+      <p>• <b>Tuyến đường:</b> Đường bộ thực tế tại Đà Nẵng (OSRM)</p>
+      <p>• <b>Trụ sở:</b> 29 Đặng Thai Mai, Q. Thanh Khê, Đà Nẵng</p>
     `;
 
     document.getElementById('calc-result-box').classList.remove('hidden');
@@ -598,7 +665,7 @@ async function calculateRouteOnMap() {
     console.error('Route calculation error:', err);
     alert('Lỗi kết nối máy chủ khi tính đường đi.');
   } finally {
-    btn.innerHTML = `<i data-lucide="route" class="w-4 h-4"></i><span>Tính toán Quãng đường & Cước</span>`;
+    btn.innerHTML = `<i data-lucide="route" class="w-4 h-4"></i><span>Tính toán Quãng đường & Cước từ ROSI</span>`;
     lucide.createIcons();
   }
 }
@@ -615,10 +682,57 @@ function createOrderFromCalculatedRoute() {
 }
 
 // -----------------------------------------------------------------------------
-// 6. CREATE ORDER MODAL & AUTO CALCULATE
+// 6. ORDER MODAL DIRECTION HANDLER
 // -----------------------------------------------------------------------------
+function setOrderModalDirection(dir) {
+  appState.modalOrderDirection = dir;
+  const btnDel = document.getElementById('modal-mode-delivery');
+  const btnPick = document.getElementById('modal-mode-pickup');
+  const senderTag = document.getElementById('sender-fixed-tag');
+  const recTag = document.getElementById('receiver-fixed-tag');
+
+  const senderName = document.getElementById('order-sender-name');
+  const senderPhone = document.getElementById('order-sender-phone');
+  const senderAddr = document.getElementById('order-sender-address');
+
+  const recName = document.getElementById('order-receiver-name');
+  const recPhone = document.getElementById('order-receiver-phone');
+  const recAddr = document.getElementById('order-receiver-address');
+
+  if (dir === 'delivery') {
+    btnDel.className = 'py-2 rounded-xl bg-blue-600 text-white text-center font-bold';
+    btnPick.className = 'py-2 rounded-xl bg-white text-slate-700 border border-slate-300 text-center font-bold';
+    senderTag.classList.remove('hidden');
+    recTag.classList.add('hidden');
+
+    senderName.value = ROSI_HUB.name;
+    senderPhone.value = ROSI_HUB.phone;
+    senderAddr.value = ROSI_HUB.address;
+
+    recName.value = '';
+    recPhone.value = '';
+    recAddr.value = '';
+    recAddr.placeholder = 'Nhập địa chỉ khách nhận tại Đà Nẵng...';
+  } else {
+    btnPick.className = 'py-2 rounded-xl bg-blue-600 text-white text-center font-bold';
+    btnDel.className = 'py-2 rounded-xl bg-white text-slate-700 border border-slate-300 text-center font-bold';
+    senderTag.classList.add('hidden');
+    recTag.classList.remove('hidden');
+
+    recName.value = ROSI_HUB.name;
+    recPhone.value = ROSI_HUB.phone;
+    recAddr.value = ROSI_HUB.address;
+
+    senderName.value = '';
+    senderPhone.value = '';
+    senderAddr.value = '';
+    senderAddr.placeholder = 'Nhập địa chỉ nơi nhận hàng tại Đà Nẵng...';
+  }
+}
+
 function openCreateOrderModal() {
   populateShipperSelect('order-shipper-id');
+  setOrderModalDirection('delivery');
   document.getElementById('modal-create-order').classList.remove('hidden');
   lucide.createIcons();
 }
@@ -643,17 +757,25 @@ function populateShipperSelect(selectId, selectedId = null) {
 let debounceTimer;
 function debounceGeocode(input, type) {
   clearTimeout(debounceTimer);
-  const dropdown = document.getElementById(type === 'sender' ? 'suggest-sender' : 'suggest-receiver');
-  const q = input.value.trim();
+  let dropdownId = 'suggest-sender';
+  if (type === 'receiver') dropdownId = 'suggest-receiver';
+  if (type === 'driver-quick') dropdownId = 'suggest-driver-quick';
 
-  if (q.length < 3) {
+  const dropdown = document.getElementById(dropdownId);
+  const rawQ = input.value.trim();
+
+  if (rawQ.length < 3) {
     dropdown.classList.add('hidden');
     return;
   }
 
+  const q = rawQ.toLowerCase().includes('đà nẵng') || rawQ.toLowerCase().includes('da nang') 
+    ? rawQ 
+    : `${rawQ}, Đà Nẵng`;
+
   debounceTimer = setTimeout(async () => {
     try {
-      dropdown.innerHTML = '<div class="p-2 text-xs text-slate-400">Đang gợi ý địa chỉ...</div>';
+      dropdown.innerHTML = '<div class="p-2 text-xs text-slate-400">Đang tìm địa chỉ tại Đà Nẵng...</div>';
       dropdown.classList.remove('hidden');
 
       const res = await fetch(`/api/geocode/search?q=${encodeURIComponent(q)}`);
@@ -678,6 +800,17 @@ function debounceGeocode(input, type) {
 }
 
 function selectModalAddress(type, address, lat, lon) {
+  if (type === 'driver-quick') {
+    const input = document.getElementById('d-quick-address');
+    const dropdown = document.getElementById('suggest-driver-quick');
+    input.value = address;
+    input.dataset.lat = lat;
+    input.dataset.lng = lon;
+    dropdown.classList.add('hidden');
+    autoCalculateDriverQuickOrder();
+    return;
+  }
+
   const input = document.getElementById(type === 'sender' ? 'order-sender-address' : 'order-receiver-address');
   const dropdown = document.getElementById(type === 'sender' ? 'suggest-sender' : 'suggest-receiver');
   input.value = address;
@@ -685,11 +818,7 @@ function selectModalAddress(type, address, lat, lon) {
   input.dataset.lng = lon;
   dropdown.classList.add('hidden');
 
-  const sAddr = document.getElementById('order-sender-address').value;
-  const rAddr = document.getElementById('order-receiver-address').value;
-  if (sAddr && rAddr) {
-    autoCalculateOrderDistance();
-  }
+  autoCalculateOrderDistance();
 }
 
 async function autoCalculateOrderDistance() {
@@ -698,10 +827,7 @@ async function autoCalculateOrderDistance() {
   const sAddr = sInput.value.trim();
   const rAddr = rInput.value.trim();
 
-  if (!sAddr || !rAddr) {
-    alert('Vui lòng nhập cả địa chỉ lấy hàng và địa chỉ giao hàng trước.');
-    return;
-  }
+  if (!sAddr || !rAddr) return;
 
   const payload = {
     fromAddress: sAddr,
@@ -723,8 +849,6 @@ async function autoCalculateOrderDistance() {
     if (result.success) {
       document.getElementById('order-distance-km').value = result.data.distance_km;
       document.getElementById('order-shipping-fee').value = result.data.shipping_fee;
-    } else {
-      alert(result.error || 'Không tính được quãng đường tự động. Bạn có thể tự gõ số km bên dưới.');
     }
   } catch (err) {
     console.error('Auto calculate error:', err);
@@ -743,9 +867,9 @@ function recalcFeeFromManualKm() {
 }
 
 async function submitCreateOrder() {
-  const sender_name = document.getElementById('order-sender-name').value.trim() || 'Người gửi';
-  const sender_phone = document.getElementById('order-sender-phone').value.trim() || '0900000000';
-  const sender_address = document.getElementById('order-sender-address').value.trim();
+  const sender_name = document.getElementById('order-sender-name').value.trim() || ROSI_HUB.name;
+  const sender_phone = document.getElementById('order-sender-phone').value.trim() || ROSI_HUB.phone;
+  const sender_address = document.getElementById('order-sender-address').value.trim() || ROSI_HUB.address;
 
   const receiver_name = document.getElementById('order-receiver-name').value.trim();
   const receiver_phone = document.getElementById('order-receiver-phone').value.trim();
@@ -759,7 +883,7 @@ async function submitCreateOrder() {
   const notes = document.getElementById('order-notes').value.trim();
 
   if (!sender_address || !receiver_address || !receiver_name) {
-    alert('Vui lòng điền đầy đủ: Tên người nhận, Địa chỉ lấy hàng và Địa chỉ giao hàng.');
+    alert('Vui lòng điền đầy đủ tên và địa chỉ người nhận.');
     return;
   }
 
@@ -781,15 +905,9 @@ async function submitCreateOrder() {
 
     if (result.success) {
       closeModal('modal-create-order');
-      document.getElementById('order-receiver-name').value = '';
-      document.getElementById('order-receiver-phone').value = '';
-      document.getElementById('order-receiver-address').value = '';
-      document.getElementById('order-distance-km').value = '';
-      document.getElementById('order-shipping-fee').value = '';
-      
       loadOrders();
       loadDashboardSummary();
-      alert('Tạo đơn hàng thành công!');
+      alert('Tạo đơn hàng ROSI thành công!');
     } else {
       alert('Lỗi tạo đơn: ' + result.error);
     }
@@ -800,7 +918,7 @@ async function submitCreateOrder() {
 }
 
 // -----------------------------------------------------------------------------
-// 7. ORDER DETAIL & STATUS UPDATE MODAL
+// 7. ORDER DETAIL MODAL
 // -----------------------------------------------------------------------------
 async function openOrderDetailModal(orderId) {
   const order = appState.orders.find(o => o.id === orderId);
@@ -815,31 +933,31 @@ async function openOrderDetailModal(orderId) {
       ${getStatusBadge(order.status)}
     </div>
 
-    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
-      <p class="font-bold text-slate-800">Thông tin chuyển phát:</p>
+    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+      <p class="font-bold text-slate-800">Thông tin chuyển phát ROSI:</p>
       <div class="space-y-1">
-        <p><b>Điểm lấy:</b> ${order.sender_name} (${order.sender_phone}) - ${order.sender_address}</p>
-        <p><b>Điểm giao:</b> ${order.receiver_name} (${order.receiver_phone}) - ${order.receiver_address}</p>
+        <p><b>Điểm lấy (A):</b> ${order.sender_name} (${order.sender_phone}) - ${order.sender_address}</p>
+        <p><b>Điểm giao (B):</b> ${order.receiver_name} (${order.receiver_phone}) - ${order.receiver_address}</p>
       </div>
     </div>
 
     <div class="grid grid-cols-2 gap-2">
-      <div class="bg-blue-50 p-2.5 rounded-lg border border-blue-200">
+      <div class="bg-blue-50 p-2.5 rounded-xl border border-blue-200">
         <span class="text-slate-500">Quãng đường</span>
         <p class="font-bold text-blue-700 text-sm">${order.distance_km} km</p>
       </div>
-      <div class="bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
+      <div class="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
         <span class="text-slate-500">Cước phí thu</span>
         <p class="font-bold text-emerald-700 text-sm">${formatVND(order.shipping_fee)}</p>
       </div>
     </div>
 
     <div class="grid grid-cols-2 gap-2">
-      <div class="bg-purple-50 p-2.5 rounded-lg border border-purple-200">
+      <div class="bg-purple-50 p-2.5 rounded-xl border border-purple-200">
         <span class="text-slate-500">Lương xế nhận</span>
         <p class="font-bold text-purple-700 text-sm">${formatVND(order.shipper_earning)}</p>
       </div>
-      <div class="bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+      <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200">
         <span class="text-slate-500">Tiền COD</span>
         <p class="font-bold text-amber-700 text-sm">${formatVND(order.cod_amount)}</p>
       </div>
@@ -848,13 +966,13 @@ async function openOrderDetailModal(orderId) {
     <div class="space-y-2 border-t pt-2">
       <div>
         <label class="block font-medium text-slate-700 mb-1">Tài xế phụ trách:</label>
-        <select id="dt-shipper-select" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-medium">
+        <select id="dt-shipper-select" class="w-full border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white font-medium">
           <option value="">-- Chưa gán tài xế --</option>
         </select>
       </div>
       <div>
         <label class="block font-medium text-slate-700 mb-1">Thay đổi trạng thái đơn:</label>
-        <select id="dt-status-select" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-medium">
+        <select id="dt-status-select" class="w-full border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white font-medium">
           <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Chờ gán tài xế</option>
           <option value="assigned" ${order.status === 'assigned' ? 'selected' : ''}>Đã gán tài xế</option>
           <option value="delivering" ${order.status === 'delivering' ? 'selected' : ''}>Đang trên đường giao</option>
@@ -864,7 +982,7 @@ async function openOrderDetailModal(orderId) {
       </div>
       <div>
         <label class="block font-medium text-slate-700 mb-1">Ghi chú:</label>
-        <input type="text" id="dt-notes" value="${order.notes || ''}" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white">
+        <input type="text" id="dt-notes" value="${order.notes || ''}" class="w-full border border-slate-300 rounded-xl px-2.5 py-1.5 bg-white">
       </div>
     </div>
   `;
@@ -873,7 +991,7 @@ async function openOrderDetailModal(orderId) {
 
   const footer = document.getElementById('dt-order-footer');
   footer.innerHTML = `
-    <button onclick="deleteOrder(${order.id})" class="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 font-semibold text-xs flex items-center gap-1 transition">
+    <button onclick="deleteOrder(${order.id})" class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-semibold text-xs flex items-center gap-1 transition">
       <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
       <span>Xóa đơn</span>
     </button>
@@ -910,8 +1028,6 @@ async function saveOrderDetail(orderId) {
       closeModal('modal-order-detail');
       loadOrders();
       loadDashboardSummary();
-    } else {
-      alert('Lỗi cập nhật: ' + result.error);
     }
   } catch (err) {
     console.error(err);
@@ -957,10 +1073,10 @@ function renderShippersList(shippers) {
   }
 
   container.innerHTML = shippers.map(s => `
-    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+    <div class="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm space-y-3">
       <div class="flex items-center justify-between border-b pb-2">
         <div class="flex items-center space-x-2.5">
-          <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
+          <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
             ${s.name.split(' ').pop().slice(0, 1)}
           </div>
           <div>
@@ -988,7 +1104,7 @@ function renderShippersList(shippers) {
         </p>
       </div>
 
-      <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 grid grid-cols-2 gap-2 text-center text-xs">
+      <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 grid grid-cols-2 gap-2 text-center text-xs">
         <div>
           <span class="text-slate-400 text-[10px]">Đã hoàn thành</span>
           <p class="font-bold text-slate-800">${s.total_completed_trips || 0} chuyến</p>
@@ -1000,7 +1116,7 @@ function renderShippersList(shippers) {
       </div>
 
       <div class="flex justify-end space-x-2 pt-1 border-t">
-        <button onclick="editShipper(${s.id})" class="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold text-xs flex items-center gap-1">
+        <button onclick="editShipper(${s.id})" class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold text-xs flex items-center gap-1">
           <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
           <span>Chỉnh sửa</span>
         </button>
@@ -1016,8 +1132,8 @@ function openShipperModal() {
   document.getElementById('shipper-form-name').value = '';
   document.getElementById('shipper-form-phone').value = '';
   document.getElementById('shipper-form-password').value = '123456';
-  document.getElementById('shipper-form-plate').value = '';
-  document.getElementById('shipper-form-base-salary').value = '3000000';
+  document.getElementById('shipper-form-plate').value = '43-';
+  document.getElementById('shipper-form-base-salary').value = '3500000';
   document.getElementById('shipper-form-allowance').value = '600000';
   document.getElementById('shipper-form-commission').value = '75';
   document.getElementById('shipper-form-km-rate').value = '4500';
@@ -1039,10 +1155,10 @@ function editShipper(shipperId) {
   document.getElementById('shipper-form-name').value = shipper.name;
   document.getElementById('shipper-form-phone').value = shipper.phone;
   document.getElementById('shipper-form-password').value = '123456';
-  document.getElementById('shipper-form-plate').value = shipper.license_plate || '';
+  document.getElementById('shipper-form-plate').value = shipper.license_plate || '43-';
   document.getElementById('shipper-form-vehicle').value = shipper.vehicle_type || 'Xe máy';
-  document.getElementById('shipper-form-base-salary').value = shipper.base_salary || 0;
-  document.getElementById('shipper-form-allowance').value = shipper.allowance || 0;
+  document.getElementById('shipper-form-base-salary').value = shipper.base_salary || 3500000;
+  document.getElementById('shipper-form-allowance').value = shipper.allowance || 600000;
   document.getElementById('shipper-form-commission').value = shipper.commission_rate || 75;
   document.getElementById('shipper-form-km-rate').value = shipper.km_rate || 4500;
 
@@ -1100,7 +1216,7 @@ async function submitShipperForm() {
 }
 
 // -----------------------------------------------------------------------------
-// 9. MONTHLY PAYROLL & EXCEL EXPORT (CHO KẾ TOÁN)
+// 9. MONTHLY PAYROLL & EXCEL EXPORT (CHO KẾ TOÁN ROSI VIỆT NAM)
 // -----------------------------------------------------------------------------
 async function loadPayrollData() {
   const monthInput = document.getElementById('payroll-month-input');
@@ -1165,7 +1281,6 @@ function renderPayrollTable(payrollList, monthYear) {
 function exportPayrollExcel() {
   const monthInput = document.getElementById('payroll-month-input');
   const monthYear = monthInput ? monthInput.value : new Date().toISOString().slice(0, 7);
-  // Trực tiếp mở URL tải file excel
   window.location.href = `/api/payroll/export-excel?month_year=${monthYear}`;
 }
 
@@ -1211,8 +1326,9 @@ function viewSalarySlip(payroll) {
   area.innerHTML = `
     <div class="border-b-2 border-slate-800 pb-4 flex justify-between items-center">
       <div>
-        <h2 class="text-base font-bold uppercase tracking-wider text-slate-800">CÔNG TY DỊCH VỤ GIAO NHẬN NHANH</h2>
-        <p class="text-[11px] text-slate-500">Hotline: 0901 234 567 | Bộ phận Kế toán & Tiền lương</p>
+        <h2 class="text-base font-extrabold uppercase tracking-wider text-slate-800">CÔNG TY TNHH ROSI VIỆT NAM</h2>
+        <p class="text-[11px] text-slate-600">Trụ sở: 29 Đặng Thai Mai, P. Vĩnh Trung, Q. Thanh Khê, TP. Đà Nẵng</p>
+        <p class="text-[11px] text-slate-500">Hotline: 0905 123 456 | Kế toán Tiền lương</p>
       </div>
       <div class="text-right">
         <h3 class="text-sm font-bold text-blue-700 uppercase">PHIẾU LƯƠNG NHÂN VIÊN</h3>
@@ -1220,7 +1336,7 @@ function viewSalarySlip(payroll) {
       </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-4 py-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+    <div class="grid grid-cols-2 gap-4 py-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
       <div>
         <p><b>Họ và tên:</b> ${payroll.name}</p>
         <p><b>Số điện thoại:</b> ${payroll.phone}</p>
@@ -1232,15 +1348,15 @@ function viewSalarySlip(payroll) {
     </div>
 
     <div class="grid grid-cols-3 gap-2 text-center py-2">
-      <div class="border border-slate-200 p-2 rounded">
+      <div class="border border-slate-200 p-2 rounded-xl">
         <span class="text-[10px] text-slate-500 uppercase">Số chuyến giao</span>
         <p class="text-sm font-bold text-slate-800">${payroll.total_trips} chuyến</p>
       </div>
-      <div class="border border-slate-200 p-2 rounded">
+      <div class="border border-slate-200 p-2 rounded-xl">
         <span class="text-[10px] text-slate-500 uppercase">Tổng quãng đường</span>
         <p class="text-sm font-bold text-blue-700">${payroll.total_km} km</p>
       </div>
-      <div class="border border-slate-200 p-2 rounded">
+      <div class="border border-slate-200 p-2 rounded-xl">
         <span class="text-[10px] text-slate-500 uppercase">Tổng tiền công km</span>
         <p class="text-sm font-bold text-emerald-700">${formatVND(payroll.total_trip_earning)}</p>
       </div>
@@ -1258,7 +1374,7 @@ function viewSalarySlip(payroll) {
         <tr>
           <td class="border border-slate-300 p-2 font-medium">1. Lương cơ bản</td>
           <td class="border border-slate-300 p-2 text-right">${formatVND(payroll.base_salary)}</td>
-          <td class="border border-slate-300 p-2 text-slate-500">Mức lương thỏa thuận cố định</td>
+          <td class="border border-slate-300 p-2 text-slate-500">Mức lương cố định</td>
         </tr>
         <tr>
           <td class="border border-slate-300 p-2 font-medium">2. Tiền công chuyến theo Km</td>
@@ -1278,12 +1394,12 @@ function viewSalarySlip(payroll) {
         <tr>
           <td class="border border-slate-300 p-2 font-medium">5. Khấu trừ / Phạt</td>
           <td class="border border-slate-300 p-2 text-right text-rose-600">-${formatVND(payroll.deduction)}</td>
-          <td class="border border-slate-300 p-2 text-slate-500">Khấu trừ vi phạm (nếu có)</td>
+          <td class="border border-slate-300 p-2 text-slate-500">Khấu trừ (nếu có)</td>
         </tr>
         <tr class="bg-blue-50 font-bold text-sm text-blue-900">
           <td class="border border-slate-300 p-2.5 uppercase">TỔNG LƯƠNG THỰC LĨNH</td>
           <td class="border border-slate-300 p-2.5 text-right text-blue-700">${formatVND(payroll.total_salary)}</td>
-          <td class="border border-slate-300 p-2.5 text-xs font-normal">Chuyển khoản vào ngày 05</td>
+          <td class="border border-slate-300 p-2.5 text-xs font-normal">Chuyển khoản định kỳ</td>
         </tr>
       </tbody>
     </table>
@@ -1324,8 +1440,7 @@ async function loadSettingsData() {
 async function saveSettings() {
   const keys = [
     'base_distance_km', 'base_price', 'tier1_max_km', 'tier1_rate', 'tier2_rate',
-    'salary_calc_method', 'shipper_default_percentage', 'shipper_default_km_rate',
-    'company_name', 'company_phone'
+    'company_name', 'company_address', 'company_phone'
   ];
 
   const payload = {};
@@ -1342,7 +1457,7 @@ async function saveSettings() {
     });
     const result = await res.json();
     if (result.success) {
-      alert('Đã lưu cấu hình bảng giá thành công!');
+      alert('Đã lưu cấu hình ROSI VIỆT NAM thành công!');
     }
   } catch (err) {
     console.error(err);
@@ -1350,14 +1465,176 @@ async function saveSettings() {
 }
 
 // -----------------------------------------------------------------------------
-// 11. SHIPPER MOBILE APP (PORTAL RIÊNG CHO TÀI XẾ ĐI GIAO HÀNG)
+// 11. SHIPPER MOBILE APP (TÀI XẾ NHẬN & TỰ TẠO ĐƠN TRÊN ĐIỆN THOẠI)
 // -----------------------------------------------------------------------------
 function initDriverPortal(driver) {
   document.getElementById('driver-app-name').textContent = driver.name;
-  document.getElementById('driver-app-plate').textContent = `${driver.vehicle_type || 'Xe máy'} • ${driver.license_plate || 'Chưa có biển số'}`;
-  document.getElementById('driver-app-phone').textContent = driver.phone;
-
+  document.getElementById('driver-app-plate').textContent = `${driver.vehicle_type || 'Xe máy'} • ${driver.license_plate || '43-C1 888.22'}`;
   loadShipperPortalData();
+}
+
+function openDriverQuickOrderModal() {
+  document.getElementById('d-quick-address').value = '';
+  document.getElementById('d-quick-name').value = '';
+  document.getElementById('d-quick-phone').value = '';
+  document.getElementById('d-quick-cod').value = '0';
+  document.getElementById('d-quick-notes').value = '';
+  document.getElementById('d-quick-dist').textContent = '-- km';
+  document.getElementById('d-quick-earn').textContent = '-- đ';
+  appState.driverQuickCalc = { distanceKm: 0, shippingFee: 0, earning: 0 };
+
+  setDriverTripDirection('delivery');
+  document.getElementById('modal-driver-quick-order').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function setDriverTripDirection(dir) {
+  appState.driverTripMode = dir;
+  const btnDel = document.getElementById('d-quick-delivery');
+  const btnPick = document.getElementById('d-quick-pickup');
+  const label = document.getElementById('d-target-label');
+
+  if (dir === 'delivery') {
+    btnDel.className = 'py-2 rounded-xl bg-emerald-600 text-white font-bold';
+    btnPick.className = 'py-2 rounded-xl bg-white text-slate-600 border font-bold';
+    label.textContent = 'Địa chỉ giao hàng cho khách tại Đà Nẵng *';
+  } else {
+    btnPick.className = 'py-2 rounded-xl bg-emerald-600 text-white font-bold';
+    btnDel.className = 'py-2 rounded-xl bg-white text-slate-600 border font-bold';
+    label.textContent = 'Địa chỉ nơi nhận/lấy hàng tại Đà Nẵng *';
+  }
+}
+
+async function autoCalculateDriverQuickOrder() {
+  const addrInput = document.getElementById('d-quick-address');
+  const rawAddr = addrInput.value.trim();
+
+  if (!rawAddr) {
+    alert('Vui lòng nhập địa chỉ khách tại Đà Nẵng');
+    return;
+  }
+
+  const clientAddr = rawAddr.toLowerCase().includes('đà nẵng') || rawAddr.toLowerCase().includes('da nang') 
+    ? rawAddr 
+    : `${rawAddr}, Đà Nẵng`;
+
+  let payload = {};
+  if (appState.driverTripMode === 'delivery') {
+    // Từ 29 Đặng Thai Mai -> Khách
+    payload = {
+      fromAddress: ROSI_HUB.address,
+      fromLat: ROSI_HUB.lat,
+      fromLng: ROSI_HUB.lng,
+      toAddress: clientAddr,
+      toLat: addrInput.dataset.lat,
+      toLng: addrInput.dataset.lng
+    };
+  } else {
+    // Từ Khách -> về 29 Đặng Thai Mai
+    payload = {
+      fromAddress: clientAddr,
+      fromLat: addrInput.dataset.lat,
+      fromLng: addrInput.dataset.lng,
+      toAddress: ROSI_HUB.address,
+      toLat: ROSI_HUB.lat,
+      toLng: ROSI_HUB.lng
+    };
+  }
+
+  try {
+    const res = await fetch('/api/route/calculate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+
+    if (result.success) {
+      const d = result.data;
+      const earning = Math.round(d.shipping_fee * 0.75);
+
+      appState.driverQuickCalc = {
+        distanceKm: d.distance_km,
+        shippingFee: d.shipping_fee,
+        earning: earning
+      };
+
+      document.getElementById('d-quick-dist').textContent = `${d.distance_km} km`;
+      document.getElementById('d-quick-earn').textContent = formatVND(earning);
+    } else {
+      alert('Không đo được quãng đường tự động. Vui lòng kiểm tra lại địa chỉ.');
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function submitDriverQuickOrder() {
+  if (!appState.currentUser || appState.userRole !== 'shipper') return;
+
+  const addr = document.getElementById('d-quick-address').value.trim();
+  const name = document.getElementById('d-quick-name').value.trim() || 'Khách hàng';
+  const phone = document.getElementById('d-quick-phone').value.trim() || '0900000000';
+  const cod = parseFloat(document.getElementById('d-quick-cod').value) || 0;
+  const notes = document.getElementById('d-quick-notes').value.trim();
+
+  if (!addr) {
+    alert('Vui lòng nhập địa chỉ nhận/giao.');
+    return;
+  }
+
+  if (appState.driverQuickCalc.distanceKm <= 0) {
+    await autoCalculateDriverQuickOrder();
+  }
+
+  let sender_name, sender_phone, sender_address;
+  let receiver_name, receiver_phone, receiver_address;
+
+  if (appState.driverTripMode === 'delivery') {
+    sender_name = ROSI_HUB.name;
+    sender_phone = ROSI_HUB.phone;
+    sender_address = ROSI_HUB.address;
+    receiver_name = name;
+    receiver_phone = phone;
+    receiver_address = addr;
+  } else {
+    sender_name = name;
+    sender_phone = phone;
+    sender_address = addr;
+    receiver_name = ROSI_HUB.name;
+    receiver_phone = ROSI_HUB.phone;
+    receiver_address = ROSI_HUB.address;
+  }
+
+  const payload = {
+    sender_name, sender_phone, sender_address,
+    receiver_name, receiver_phone, receiver_address,
+    distance_km: appState.driverQuickCalc.distanceKm || 3.0,
+    shipping_fee: appState.driverQuickCalc.shippingFee || 21500,
+    item_name: 'Hàng hóa ROSI',
+    cod_amount: cod,
+    shipper_id: appState.currentUser.id,
+    notes: notes || (appState.driverTripMode === 'delivery' ? 'Giao hàng từ 29 Đặng Thai Mai' : 'Đi nhận hàng về 29 Đặng Thai Mai')
+  };
+
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+
+    if (result.success) {
+      closeModal('modal-driver-quick-order');
+      loadShipperPortalData();
+      alert('Đã tạo chuyến và thêm vào danh sách đi giao của bạn!');
+    } else {
+      alert('Lỗi tạo chuyến: ' + result.error);
+    }
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 function switchShipperTab(tab) {
@@ -1390,7 +1667,6 @@ async function loadShipperPortalData() {
 
     document.getElementById('sp-active-count').textContent = activeOrders.length;
 
-    // Tính thành tích hôm nay
     const today = new Date().toISOString().slice(0, 10);
     const todayCompleted = completedOrders.filter(o => o.completed_at && o.completed_at.slice(0, 10) === today);
     const todayKm = todayCompleted.reduce((acc, o) => acc + (o.distance_km || 0), 0);
@@ -1413,8 +1689,8 @@ function renderShipperPortalOrders(orders) {
     container.innerHTML = `
       <div class="bg-white p-8 rounded-3xl border border-slate-200 text-center text-slate-400 space-y-2">
         <i data-lucide="check-circle-2" class="w-12 h-12 mx-auto text-emerald-500"></i>
-        <p class="text-xs font-bold text-slate-600">Hiện không có đơn hàng nào cần giao</p>
-        <p class="text-[11px] text-slate-400">Khi Giám đốc điều phối đơn mới, đơn sẽ hiển thị tại đây.</p>
+        <p class="text-xs font-bold text-slate-700">Hiện không có đơn nào cần giao</p>
+        <p class="text-[11px] text-slate-400">Bạn có thể bấm "TẠO CHUYẾN ĐI GIAO / NHẬN HÀNG MỚI" ở trên để bắt đầu chuyến đi.</p>
       </div>
     `;
     lucide.createIcons();
@@ -1510,13 +1786,6 @@ async function updateShipperOrderStatus(orderId, newStatus) {
 // 12. PHONE CONNECT MODAL
 // -----------------------------------------------------------------------------
 function openPhoneConnectModal() {
-  const currentHost = window.location.host;
-  const el = document.getElementById('phone-access-url');
-  if (currentHost.includes('localhost') || currentHost.includes('127.0.0.1')) {
-    el.innerHTML = `http://192.168.1.25:3000<br><span class="text-[11px] text-slate-500 font-normal">Gõ địa chỉ này vào Safari iPhone hoặc Chrome Android</span>`;
-  } else {
-    el.textContent = `http://${currentHost}`;
-  }
   document.getElementById('modal-phone-connect').classList.remove('hidden');
 }
 

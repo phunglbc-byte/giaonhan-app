@@ -293,7 +293,7 @@ app.post('/api/orders', (req, res) => {
     }
 
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const order_code = `GN-${randomSuffix}`;
+    const order_code = `ROSI-${randomSuffix}`;
 
     const stmt = db.prepare(`
       INSERT INTO orders (
@@ -593,12 +593,14 @@ app.get('/api/payroll/export-excel', (req, res) => {
     const monthYear = req.query.month_year || new Date().toISOString().slice(0, 7);
     const payrollList = computePayrollData(monthYear);
     const settings = getSettingsMap();
-    const companyName = settings.company_name || 'CÔNG TY DỊCH VỤ GIAO NHẬN';
+    const companyName = settings.company_name || 'CÔNG TY TNHH ROSI VIỆT NAM';
+    const companyAddress = settings.company_address || '29 Đặng Thai Mai, Phường Vĩnh Trung, Quận Thanh Khê, Thành phố Đà Nẵng';
 
     // 1. Tạo Sheet 1: Bảng Lương Tổng Hợp
     const summaryRows = [
       [`BẢNG LƯƠNG NHÂN VIÊN GIAO NHẬN THEO QUÃNG ĐƯỜNG (KM)`],
       [`Đơn vị: ${companyName}`],
+      [`Trụ sở cố định: ${companyAddress}`],
       [`Kỳ tính lương: Tháng ${monthYear.split('-')[1]} năm ${monthYear.split('-')[0]}`],
       [], // Dòng trống
       [
@@ -728,7 +730,7 @@ app.get('/api/payroll/export-excel', (req, res) => {
 
     const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
-    const fileName = `Bang_Luong_Giao_Nhan_${monthYear}.xlsx`;
+    const fileName = `Bang_Luong_ROSI_Thang_${monthYear}.xlsx`;
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.send(buffer);
