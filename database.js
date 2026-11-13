@@ -33,6 +33,14 @@ function initDatabase() {
     `).run('admin', '123456', 'Ban Giám Đốc ROSI', 'admin');
   }
 
+  const ketoanExists = db.prepare('SELECT id FROM users WHERE username = ?').get('ketoan');
+  if (!ketoanExists) {
+    db.prepare(`
+      INSERT INTO users (username, password, full_name, role)
+      VALUES (?, ?, ?, ?)
+    `).run('ketoan', '123456', 'Phòng Kế Toán ROSI', 'accountant');
+  }
+
   // 2. Shippers table
   db.exec(`
     CREATE TABLE IF NOT EXISTS shippers (

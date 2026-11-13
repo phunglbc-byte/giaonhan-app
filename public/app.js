@@ -82,20 +82,38 @@ function getStatusBadge(status) {
 // -----------------------------------------------------------------------------
 function switchLoginRole(role) {
   const adminTab = document.getElementById('tab-login-admin');
+  const ketoanTab = document.getElementById('tab-login-ketoan');
   const shipperTab = document.getElementById('tab-login-shipper');
   const adminForm = document.getElementById('form-login-admin');
   const shipperForm = document.getElementById('form-login-shipper');
+  const usernameLabel = document.getElementById('login-username-label');
+  const usernameInput = document.getElementById('admin-username');
+  const btnSubmitMgmt = document.getElementById('btn-submit-mgmt');
+
+  // Reset tab classes
+  const inactiveClass = 'py-2 rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1 font-semibold';
+  if (adminTab) adminTab.className = inactiveClass;
+  if (ketoanTab) ketoanTab.className = inactiveClass;
+  if (shipperTab) shipperTab.className = inactiveClass;
 
   if (role === 'admin') {
-    adminTab.className = 'py-2.5 rounded-xl bg-white text-blue-700 shadow-xs transition flex items-center justify-center gap-1.5 font-bold';
-    shipperTab.className = 'py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5 font-bold';
-    adminForm.classList.remove('hidden');
-    shipperForm.classList.add('hidden');
+    if (adminTab) adminTab.className = 'py-2 rounded-xl bg-white text-blue-700 shadow-xs transition flex items-center justify-center gap-1 font-bold';
+    if (adminForm) adminForm.classList.remove('hidden');
+    if (shipperForm) shipperForm.classList.add('hidden');
+    if (usernameLabel) usernameLabel.textContent = 'Tên đăng nhập Giám đốc (admin)';
+    if (usernameInput) usernameInput.value = 'admin';
+    if (btnSubmitMgmt) btnSubmitMgmt.innerHTML = '<i data-lucide="shield" class="w-4 h-4"></i><span>Đăng Nhập Ban Giám Đốc</span>';
+  } else if (role === 'accountant') {
+    if (ketoanTab) ketoanTab.className = 'py-2 rounded-xl bg-white text-purple-700 shadow-xs transition flex items-center justify-center gap-1 font-bold';
+    if (adminForm) adminForm.classList.remove('hidden');
+    if (shipperForm) shipperForm.classList.add('hidden');
+    if (usernameLabel) usernameLabel.textContent = 'Tên đăng nhập Kế toán (ketoan)';
+    if (usernameInput) usernameInput.value = 'ketoan';
+    if (btnSubmitMgmt) btnSubmitMgmt.innerHTML = '<i data-lucide="receipt" class="w-4 h-4"></i><span>Đăng Nhập Phòng Kế Toán</span>';
   } else {
-    shipperTab.className = 'py-2.5 rounded-xl bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1.5 font-bold';
-    adminTab.className = 'py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5 font-bold';
-    shipperForm.classList.remove('hidden');
-    adminForm.classList.add('hidden');
+    if (shipperTab) shipperTab.className = 'py-2 rounded-xl bg-white text-emerald-700 shadow-xs transition flex items-center justify-center gap-1 font-bold';
+    if (shipperForm) shipperForm.classList.remove('hidden');
+    if (adminForm) adminForm.classList.add('hidden');
   }
   lucide.createIcons();
 }
@@ -104,7 +122,7 @@ async function handleLogin(e, role) {
   if (e) e.preventDefault();
 
   let payload = { role };
-  if (role === 'admin') {
+  if (role === 'admin' || role === 'accountant') {
     payload.username = document.getElementById('admin-username').value.trim();
     payload.password = document.getElementById('admin-password').value;
   } else {
@@ -134,9 +152,15 @@ async function handleLogin(e, role) {
 
 function quickLogin(role, phone = '0912345678') {
   if (role === 'admin') {
+    switchLoginRole('admin');
     document.getElementById('admin-username').value = 'admin';
     document.getElementById('admin-password').value = '123456';
     handleLogin(null, 'admin');
+  } else if (role === 'accountant') {
+    switchLoginRole('accountant');
+    document.getElementById('admin-username').value = 'ketoan';
+    document.getElementById('admin-password').value = '123456';
+    handleLogin(null, 'accountant');
   } else {
     switchLoginRole('shipper');
     document.getElementById('shipper-phone').value = phone;
@@ -144,6 +168,8 @@ function quickLogin(role, phone = '0912345678') {
     handleLogin(null, 'shipper');
   }
 }
+
+let driverPollingInterval = null;
 
 function applyLoginSession(role, user) {
   appState.userRole = role;
@@ -161,10 +187,26 @@ function applyLoginSession(role, user) {
     loadShippers();
     loadOrders();
     loadDashboardSummary();
+  } else if (role === 'accountant') {
+    headerName.innerHTML = `📊 Kế Toán: <b class="font-bold text-white">${user.name}</b>`;
+    document.getElementById('desktop-sidebar').classList.remove('hidden');
+    document.getElementById('mobile-nav').classList.remove('hidden');
+    navigateView('payroll');
+    loadShippers();
+    loadOrders();
+    loadPayrollData();
   } else {
-    headerName.innerHTML = `🏍️ Xế ROSI: <b class="font-bold text-white">${user.name}</b>`;
+    // TÀI XẾ: CHỈ ĐƯỢC XEM GIAO DIỆN TÀI XẾ, TUYỆT ĐỐI ẨN TOÀN BỘ THANH ĐIỀU HƯỚNG VÀ DỮ LIỆU CÔNG TY
+    headerName.innerHTML = `🏍️ Tài Xế: <b class="font-bold text-white">${user.name}</b>`;
     document.getElementById('desktop-sidebar').classList.add('hidden');
     document.getElementById('mobile-nav').classList.add('hidden');
+    
+    const mgmtViews = ['dashboard', 'orders', 'route-calc', 'shippers', 'payroll', 'settings'];
+    mgmtViews.forEach(v => {
+      const el = document.getElementById(`view-${v}`);
+      if (el) el.classList.add('hidden');
+    });
+
     navigateView('shipper-mobile');
     initDriverPortal(user);
   }
@@ -173,6 +215,10 @@ function applyLoginSession(role, user) {
 }
 
 function handleLogout() {
+  if (driverPollingInterval) {
+    clearInterval(driverPollingInterval);
+    driverPollingInterval = null;
+  }
   localStorage.removeItem('giaonhan_auth');
   appState.currentUser = null;
   appState.userRole = null;
@@ -755,17 +801,34 @@ function populateShipperSelect(selectId, selectedId = null) {
 }
 
 let debounceTimer;
+let calcDebounceTimer;
+
 function debounceGeocode(input, type) {
   clearTimeout(debounceTimer);
+  clearTimeout(calcDebounceTimer);
+
   let dropdownId = 'suggest-sender';
   if (type === 'receiver') dropdownId = 'suggest-receiver';
   if (type === 'driver-quick') dropdownId = 'suggest-driver-quick';
+  if (type === 'calc-from') dropdownId = 'autocomplete-from';
+  if (type === 'calc-to') dropdownId = 'autocomplete-to';
 
   const dropdown = document.getElementById(dropdownId);
   const rawQ = input.value.trim();
 
-  if (rawQ.length < 3) {
-    dropdown.classList.add('hidden');
+  // Tự động tính toán km sau khi dừng gõ 500ms ngay cả khi người dùng không bấm vào dropdown
+  calcDebounceTimer = setTimeout(() => {
+    if (type === 'driver-quick') {
+      autoCalculateDriverQuickOrder();
+    } else if (type === 'receiver' || type === 'sender') {
+      autoCalculateOrderDistance();
+    } else if (type === 'calc-to' || type === 'calc-from') {
+      calculateRouteOnMap();
+    }
+  }, 600);
+
+  if (rawQ.length < 2) {
+    if (dropdown) dropdown.classList.add('hidden');
     return;
   }
 
@@ -775,48 +838,86 @@ function debounceGeocode(input, type) {
 
   debounceTimer = setTimeout(async () => {
     try {
-      dropdown.innerHTML = '<div class="p-2 text-xs text-slate-400">Đang tìm địa chỉ tại Đà Nẵng...</div>';
-      dropdown.classList.remove('hidden');
+      if (dropdown) {
+        dropdown.innerHTML = '<div class="p-2 text-xs text-slate-400">Đang tìm địa chỉ tại Đà Nẵng...</div>';
+        dropdown.classList.remove('hidden');
+      }
 
       const res = await fetch(`/api/geocode/search?q=${encodeURIComponent(q)}`);
       const results = await res.json();
 
       if (!results || results.length === 0) {
-        dropdown.classList.add('hidden');
+        if (dropdown) dropdown.classList.add('hidden');
         return;
       }
 
-      dropdown.innerHTML = results.map(item => `
-        <div class="autocomplete-item" onclick="selectModalAddress('${type}', '${item.display_name.replace(/'/g, "\\'")}', ${item.lat}, ${item.lon})">
-          <p class="font-bold text-slate-800">${item.name}</p>
-          <p class="text-slate-500 text-[11px] line-clamp-1">${item.display_name}</p>
-        </div>
-      `).join('');
+      if (dropdown) {
+        dropdown.innerHTML = results.map(item => `
+          <div class="autocomplete-item p-2 hover:bg-blue-50 cursor-pointer border-b border-slate-100 last:border-b-0" onclick="selectModalAddress('${type}', '${item.display_name.replace(/'/g, "\\'")}', ${item.lat}, ${item.lon})">
+            <p class="font-bold text-xs text-slate-800">${item.name}</p>
+            <p class="text-slate-500 text-[11px] line-clamp-1">${item.display_name}</p>
+          </div>
+        `).join('');
+      }
     } catch (err) {
       console.error(err);
-      dropdown.classList.add('hidden');
+      if (dropdown) dropdown.classList.add('hidden');
     }
-  }, 400);
+  }, 350);
 }
 
 function selectModalAddress(type, address, lat, lon) {
   if (type === 'driver-quick') {
     const input = document.getElementById('d-quick-address');
     const dropdown = document.getElementById('suggest-driver-quick');
-    input.value = address;
-    input.dataset.lat = lat;
-    input.dataset.lng = lon;
-    dropdown.classList.add('hidden');
+    if (input) {
+      input.value = address;
+      input.dataset.lat = lat;
+      input.dataset.lng = lon;
+    }
+    if (dropdown) dropdown.classList.add('hidden');
     autoCalculateDriverQuickOrder();
+    return;
+  }
+
+  if (type === 'calc-from') {
+    const input = document.getElementById('calc-from-address');
+    const dropdown = document.getElementById('autocomplete-from');
+    if (input) {
+      input.value = address;
+      input.dataset.lat = lat;
+      input.dataset.lng = lon;
+    }
+    if (dropdown) dropdown.classList.add('hidden');
+    appState.calcData.start = { lat, lng: lon };
+    setMapStartPoint(lat, lon, address);
+    calculateRouteOnMap();
+    return;
+  }
+
+  if (type === 'calc-to') {
+    const input = document.getElementById('calc-to-address');
+    const dropdown = document.getElementById('autocomplete-to');
+    if (input) {
+      input.value = address;
+      input.dataset.lat = lat;
+      input.dataset.lng = lon;
+    }
+    if (dropdown) dropdown.classList.add('hidden');
+    appState.calcData.end = { lat, lng: lon };
+    setMapEndPoint(lat, lon, address);
+    calculateRouteOnMap();
     return;
   }
 
   const input = document.getElementById(type === 'sender' ? 'order-sender-address' : 'order-receiver-address');
   const dropdown = document.getElementById(type === 'sender' ? 'suggest-sender' : 'suggest-receiver');
-  input.value = address;
-  input.dataset.lat = lat;
-  input.dataset.lng = lon;
-  dropdown.classList.add('hidden');
+  if (input) {
+    input.value = address;
+    input.dataset.lat = lat;
+    input.dataset.lng = lon;
+  }
+  if (dropdown) dropdown.classList.add('hidden');
 
   autoCalculateOrderDistance();
 }
@@ -1470,7 +1571,19 @@ async function saveSettings() {
 function initDriverPortal(driver) {
   document.getElementById('driver-app-name').textContent = driver.name;
   document.getElementById('driver-app-plate').textContent = `${driver.vehicle_type || 'Xe máy'} • ${driver.license_plate || '43-C1 888.22'}`;
+  
+  if (driverPollingInterval) {
+    clearInterval(driverPollingInterval);
+  }
+
   loadShipperPortalData();
+
+  // Tự động kiểm tra đơn mới mỗi 3 giây
+  driverPollingInterval = setInterval(() => {
+    if (appState.currentUser && appState.userRole === 'shipper') {
+      loadShipperPortalData(true);
+    }
+  }, 3000);
 }
 
 function openDriverQuickOrderModal() {
@@ -1507,10 +1620,12 @@ function setDriverTripDirection(dir) {
 
 async function autoCalculateDriverQuickOrder() {
   const addrInput = document.getElementById('d-quick-address');
+  if (!addrInput) return;
   const rawAddr = addrInput.value.trim();
 
-  if (!rawAddr) {
-    alert('Vui lòng nhập địa chỉ khách tại Đà Nẵng');
+  if (!rawAddr || rawAddr.length < 2) {
+    document.getElementById('d-quick-dist').textContent = '-- km';
+    document.getElementById('d-quick-earn').textContent = '-- đ';
     return;
   }
 
@@ -1561,11 +1676,9 @@ async function autoCalculateDriverQuickOrder() {
 
       document.getElementById('d-quick-dist').textContent = `${d.distance_km} km`;
       document.getElementById('d-quick-earn').textContent = formatVND(earning);
-    } else {
-      alert('Không đo được quãng đường tự động. Vui lòng kiểm tra lại địa chỉ.');
     }
   } catch (err) {
-    console.error(err);
+    console.error('Driver quick calc error:', err);
   }
 }
 
@@ -1652,7 +1765,9 @@ function switchShipperTab(tab) {
   loadShipperPortalData();
 }
 
-async function loadShipperPortalData() {
+let previousAssignedCount = 0;
+
+async function loadShipperPortalData(isPolling = false) {
   if (!appState.currentUser || appState.userRole !== 'shipper') return;
   const driverId = appState.currentUser.id;
 
@@ -1662,10 +1777,39 @@ async function loadShipperPortalData() {
     if (!data.success) return;
 
     const allOrders = data.data;
+    const assignedOrders = allOrders.filter(o => o.status === 'assigned');
     const activeOrders = allOrders.filter(o => o.status === 'assigned' || o.status === 'delivering');
     const completedOrders = allOrders.filter(o => o.status === 'completed');
 
     document.getElementById('sp-active-count').textContent = activeOrders.length;
+
+    // KIỂM TRA ĐƠN CÔNG TY MỚI GÁN ĐỂ BẬT CẢNH BÁO TỰ ĐỘNG
+    const alertBox = document.getElementById('new-assigned-trip-alert');
+    if (assignedOrders.length > 0) {
+      const topOrder = assignedOrders[0];
+      alertBox.innerHTML = `
+        <div class="flex items-center space-x-2">
+          <div class="w-9 h-9 rounded-full bg-white text-orange-600 flex items-center justify-center font-bold flex-shrink-0 shadow-sm">
+            <i data-lucide="bell" class="w-5 h-5 animate-bounce"></i>
+          </div>
+          <div class="overflow-hidden">
+            <p class="font-black text-xs">🚨 CÓ CUỐC MỚI CÔNG TY ĐIỀU PHỐI!</p>
+            <p class="text-[11px] text-amber-100 truncate">#${topOrder.order_code}: ${topOrder.receiver_address} (${topOrder.distance_km} km - Công ${formatVND(topOrder.shipper_earning)})</p>
+          </div>
+        </div>
+        <button onclick="acceptAssignedTrip(${topOrder.id})" class="px-3.5 py-2 rounded-xl bg-white hover:bg-amber-50 text-orange-700 font-black text-xs shadow-md whitespace-nowrap active:scale-95 flex-shrink-0">
+          🟢 BẤM NHẬN CUỐC
+        </button>
+      `;
+      alertBox.classList.remove('hidden');
+
+      if (isPolling && assignedOrders.length > previousAssignedCount) {
+        if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+      }
+    } else {
+      if (alertBox) alertBox.classList.add('hidden');
+    }
+    previousAssignedCount = assignedOrders.length;
 
     const today = new Date().toISOString().slice(0, 10);
     const todayCompleted = completedOrders.filter(o => o.completed_at && o.completed_at.slice(0, 10) === today);
@@ -1683,6 +1827,23 @@ async function loadShipperPortalData() {
   }
 }
 
+async function acceptAssignedTrip(orderId) {
+  try {
+    const res = await fetch(`/api/orders/${orderId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'delivering' })
+    });
+    const result = await res.json();
+    if (result.success) {
+      alert('Đã nhận cuốc thành công! Hãy xuất phát đi giao/nhận hàng nhé.');
+      loadShipperPortalData();
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
 function renderShipperPortalOrders(orders) {
   const container = document.getElementById('shipper-orders-container');
   if (!orders || orders.length === 0) {
@@ -1690,7 +1851,7 @@ function renderShipperPortalOrders(orders) {
       <div class="bg-white p-8 rounded-3xl border border-slate-200 text-center text-slate-400 space-y-2">
         <i data-lucide="check-circle-2" class="w-12 h-12 mx-auto text-emerald-500"></i>
         <p class="text-xs font-bold text-slate-700">Hiện không có đơn nào cần giao</p>
-        <p class="text-[11px] text-slate-400">Bạn có thể bấm "TẠO CHUYẾN ĐI GIAO / NHẬN HÀNG MỚI" ở trên để bắt đầu chuyến đi.</p>
+        <p class="text-[11px] text-slate-400">Bạn có thể bấm "TẠO CUỐC XE MỚI" ở trên để tự tạo chuyến đi.</p>
       </div>
     `;
     lucide.createIcons();
@@ -1698,11 +1859,21 @@ function renderShipperPortalOrders(orders) {
   }
 
   container.innerHTML = orders.map(o => `
-    <div class="bg-white p-4 rounded-3xl border border-slate-200/90 shadow-md space-y-3">
+    <div class="bg-white p-4 rounded-3xl border ${o.status === 'assigned' ? 'border-amber-400 ring-2 ring-amber-300/50 bg-amber-50/20' : 'border-slate-200/90'} shadow-md space-y-3">
       <div class="flex items-center justify-between border-b pb-2">
         <span class="font-extrabold text-xs text-blue-700 font-mono tracking-wider">${o.order_code}</span>
         ${getStatusBadge(o.status)}
       </div>
+
+      ${o.status === 'assigned' ? `
+        <div class="bg-amber-100/70 p-2.5 rounded-2xl border border-amber-200 text-amber-900 text-xs font-bold flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="bell" class="w-4 h-4 text-amber-600 animate-spin"></i>
+            Công ty vừa phân công đơn này
+          </span>
+          <span class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-black animate-pulse">CHỜ NHẬN</span>
+        </div>
+      ` : ''}
 
       <div class="space-y-2 text-xs">
         <div class="bg-emerald-50/70 p-3 rounded-2xl border border-emerald-100 flex items-start space-x-2.5">
@@ -1737,27 +1908,26 @@ function renderShipperPortalOrders(orders) {
         </div>
       </div>
 
-      ${o.status !== 'completed' && o.status !== 'cancelled' ? `
+      ${o.status === 'assigned' ? `
+        <button onclick="acceptAssignedTrip(${o.id})"
+          class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg animate-pulse transition active:scale-95">
+          <i data-lucide="play" class="w-4 h-4"></i>
+          <span>🟢 BẤM NHẬN CUỐC & ĐI GIAO NGAY</span>
+        </button>
+      ` : ''}
+
+      ${o.status === 'delivering' ? `
         <div class="grid grid-cols-2 gap-2 pt-1">
           <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(o.receiver_address)}" target="_blank"
             class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition">
             <i data-lucide="navigation" class="w-4 h-4 text-blue-600"></i>
             <span>Chỉ đường Maps</span>
           </a>
-
-          ${o.status === 'assigned' ? `
-            <button onclick="updateShipperOrderStatus(${o.id}, 'delivering')"
-              class="py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition">
-              <i data-lucide="play" class="w-4 h-4"></i>
-              <span>Đã nhận hàng</span>
-            </button>
-          ` : `
-            <button onclick="updateShipperOrderStatus(${o.id}, 'completed')"
-              class="py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition">
-              <i data-lucide="check-circle" class="w-4 h-4"></i>
-              <span>Giao thành công</span>
-            </button>
-          `}
+          <button onclick="updateShipperOrderStatus(${o.id}, 'completed')"
+            class="py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition active:scale-95">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span>✅ Giao thành công</span>
+          </button>
         </div>
       ` : ''}
     </div>
