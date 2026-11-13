@@ -81,6 +81,7 @@ function getStatusBadge(status) {
 // 1. AUTHENTICATION & LOGIN SESSIONS
 // -----------------------------------------------------------------------------
 function switchLoginRole(role) {
+  appState.loginFormRole = role;
   const adminTab = document.getElementById('tab-login-admin');
   const ketoanTab = document.getElementById('tab-login-ketoan');
   const shipperTab = document.getElementById('tab-login-shipper');
@@ -121,8 +122,8 @@ function switchLoginRole(role) {
 async function handleLogin(e, role) {
   if (e) e.preventDefault();
 
-  let payload = { role };
-  if (role === 'admin' || role === 'accountant') {
+  let payload = { role: role || appState.loginFormRole || 'admin' };
+  if (payload.role === 'admin' || payload.role === 'accountant') {
     payload.username = document.getElementById('admin-username').value.trim();
     payload.password = document.getElementById('admin-password').value;
   } else {
@@ -180,7 +181,7 @@ function applyLoginSession(role, user) {
 
   const headerName = document.getElementById('header-user-name');
   if (role === 'admin') {
-    headerName.innerHTML = `👑 Giám Đốc: <b class="font-bold text-white">${user.name}</b>`;
+    headerName.innerHTML = `<span class="hidden sm:inline">👑 Giám Đốc: </span><b class="font-bold text-white truncate max-w-[105px] sm:max-w-none inline-block align-bottom">${user.name}</b>`;
     document.getElementById('desktop-sidebar').classList.remove('hidden');
     document.getElementById('mobile-nav').classList.remove('hidden');
     navigateView('dashboard');
@@ -188,7 +189,7 @@ function applyLoginSession(role, user) {
     loadOrders();
     loadDashboardSummary();
   } else if (role === 'accountant') {
-    headerName.innerHTML = `📊 Kế Toán: <b class="font-bold text-white">${user.name}</b>`;
+    headerName.innerHTML = `<span class="hidden sm:inline">📊 Kế Toán: </span><b class="font-bold text-white truncate max-w-[105px] sm:max-w-none inline-block align-bottom">${user.name}</b>`;
     document.getElementById('desktop-sidebar').classList.remove('hidden');
     document.getElementById('mobile-nav').classList.remove('hidden');
     navigateView('payroll');
@@ -197,7 +198,7 @@ function applyLoginSession(role, user) {
     loadPayrollData();
   } else {
     // TÀI XẾ: CHỈ ĐƯỢC XEM GIAO DIỆN TÀI XẾ, TUYỆT ĐỐI ẨN TOÀN BỘ THANH ĐIỀU HƯỚNG VÀ DỮ LIỆU CÔNG TY
-    headerName.innerHTML = `🏍️ Tài Xế: <b class="font-bold text-white">${user.name}</b>`;
+    headerName.innerHTML = `<span class="hidden sm:inline">🏍️ Tài Xế: </span><b class="font-bold text-white truncate max-w-[105px] sm:max-w-none inline-block align-bottom">${user.name}</b>`;
     document.getElementById('desktop-sidebar').classList.add('hidden');
     document.getElementById('mobile-nav').classList.add('hidden');
     
