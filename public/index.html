@@ -165,6 +165,10 @@
           <span id="header-user-name" class="truncate">Đang tải...</span>
         </div>
 
+        <button onclick="requestPushNotificationPermission()" class="p-1.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-xs flex-shrink-0" title="Bật chuông & thông báo">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+        </button>
+
         <button onclick="openPhoneConnectModal()" class="p-1.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-xs flex-shrink-0" title="Mở trên điện thoại">
           <i data-lucide="smartphone" class="w-4 h-4"></i>
         </button>
@@ -576,7 +580,31 @@
           </div>
         </div>
 
-        <!-- BANNER THÔNG BÁO CUỐC MỚI CÔNG TY VỪA GÁN (TỰ ĐỘNG HIỆN LÊN) -->
+        <!-- THÔNG BÁO MÀN HÌNH KHÓA & CHUÔNG BÁO CHO TÀI XẾ (KHI TẮT MÀN HÌNH) -->
+        <div id="driver-push-notification-card" class="bg-blue-50 border border-blue-200 p-3.5 rounded-3xl shadow-sm space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <span class="w-9 h-9 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                <i data-lucide="bell-ring" class="w-4 h-4"></i>
+              </span>
+              <div>
+                <p class="font-black text-xs text-blue-900" id="driver-push-status-text">Báo Đơn Khi Tắt Màn Hình</p>
+                <p class="text-[11px] text-blue-700">Tự động phát chuông & nhảy đơn</p>
+              </div>
+            </div>
+            <span id="driver-push-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">Chưa bật</span>
+          </div>
+          <div class="flex gap-2">
+            <button id="btn-enable-push" onclick="requestPushNotificationPermission()" class="flex-1 py-2.5 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-xs shadow-md flex items-center justify-center gap-1.5 transition">
+              <i data-lucide="bell" class="w-4 h-4"></i>
+              <span id="btn-enable-push-text">BẬT CHUÔNG & MÀN HÌNH KHÓA</span>
+            </button>
+            <button onclick="testPushNotification()" class="py-2.5 px-3 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 active:scale-95 text-slate-700 font-bold text-xs shadow-sm flex items-center justify-center gap-1 transition" title="Thử chuông ngay">
+              <i data-lucide="volume-2" class="w-4 h-4 text-emerald-600"></i>
+              <span>Thử chuông</span>
+            </button>
+          </div>
+        </div>
         <div id="new-assigned-trip-alert" class="hidden bg-gradient-to-r from-amber-500 to-orange-500 text-white p-3.5 rounded-2xl shadow-lg animate-bounce flex items-center justify-between">
           <div class="flex items-center space-x-2">
             <div class="w-8 h-8 rounded-full bg-white text-amber-600 flex items-center justify-center font-bold">

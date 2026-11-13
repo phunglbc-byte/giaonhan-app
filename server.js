@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const os = require('os');
 const XLSX = require('xlsx');
+const webpush = require('web-push');
 const { db, initDatabase } = require('./database');
 const { calculateShippingFee, calculateShipperEarning } = require('./pricing');
 const { ROSI_HUB, DA_NANG_LOCATIONS, matchDaNangLocation, calculateHaversineKm, removeVietnameseTones } = require('./danang_geo');
@@ -10,12 +11,75 @@ const { ROSI_HUB, DA_NANG_LOCATIONS, matchDaNangLocation, calculateHaversineKm, 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// VAPID keys for Web Push Notifications (Lock screen alert when phone is off)
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BOHHsPuGAsayvQfCXBNVv_7ciI650JzzEd3AGvGipNG6U0bStyjda4VHD_-pzjMoL0GFn1UD7EKru-Nksr8Ua-I';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'mTNZQMuvOiEnrLBUSRlAKbfZFLNwugtuNQITBzahVOg';
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@rosi.vn';
+
+try {
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+} catch (e) {
+  console.error('Failed to configure VAPID details:', e.message);
+}
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize SQLite database
 initDatabase();
+
+// Web Push Notification Helper
+async function sendPushNotification({ shipperId, title, body, url, orderId }) {
+  try {
+    let subs = [];
+    if (shipperId) {
+      subs = db.prepare('SELECT * FROM push_subscriptions WHERE shipper_id = ?').all(shipperId);
+    } else {
+      subs = db.prepare('SELECT * FROM push_subscriptions').all();
+    }
+
+    if (!subs || subs.length === 0) {
+      console.log(`[PUSH] No subscriptions found for shipperId=${shipperId || 'broadcast'}`);
+      return { sent: 0 };
+    }
+
+    const payload = JSON.stringify({
+      title: title || '⚡ ĐƠN HÀNG MỚI - ROSI EXPRESS',
+      body: body || 'Có đơn hàng mới cần giao! Chạm vào đây để nhận đơn.',
+      url: url || '/?tab=driver-trips',
+      orderId: orderId || null
+    });
+
+    let sentCount = 0;
+    for (const sub of subs) {
+      const pushSub = {
+        endpoint: sub.endpoint,
+        keys: {
+          p256dh: sub.p256dh,
+          auth: sub.auth
+        }
+      };
+
+      try {
+        await webpush.sendNotification(pushSub, payload);
+        sentCount++;
+      } catch (err) {
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          console.log(`[PUSH] Cleaned expired subscription id=${sub.id}`);
+          db.prepare('DELETE FROM push_subscriptions WHERE id = ?').run(sub.id);
+        } else {
+          console.warn(`[PUSH] Send error:`, err.message);
+        }
+      }
+    }
+    console.log(`[PUSH] Successfully sent ${sentCount} notifications`);
+    return { sent: sentCount };
+  } catch (error) {
+    console.error('[PUSH ERROR]', error.message);
+    return { error: error.message };
+  }
+}
 
 // Helper to get settings as key-value object
 function getSettingsMap() {
@@ -73,6 +137,55 @@ app.post('/api/auth/login', (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// -----------------------------------------------------------------------------
+// WEB PUSH NOTIFICATION API (THÔNG BÁO MÀN HÌNH KHÓA CHO ĐIỆN THOẠI)
+// -----------------------------------------------------------------------------
+app.get('/api/push-public-key', (req, res) => {
+  res.json({ success: true, publicKey: VAPID_PUBLIC_KEY });
+});
+
+app.post('/api/push-subscribe', (req, res) => {
+  try {
+    const { endpoint, p256dh, auth, shipper_id, user_id, role } = req.body;
+    if (!endpoint || !p256dh || !auth) {
+      return res.status(400).json({ success: false, error: 'Thiếu thông tin endpoint hoặc keys' });
+    }
+
+    const existing = db.prepare('SELECT id FROM push_subscriptions WHERE endpoint = ?').get(endpoint);
+    if (existing) {
+      db.prepare(`
+        UPDATE push_subscriptions 
+        SET shipper_id = coalesce(?, shipper_id), user_id = coalesce(?, user_id), role = coalesce(?, role), p256dh = ?, auth = ?
+        WHERE id = ?
+      `).run(shipper_id || null, user_id || null, role || null, p256dh, auth, existing.id);
+    } else {
+      db.prepare(`
+        INSERT INTO push_subscriptions (user_id, shipper_id, role, endpoint, p256dh, auth)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(user_id || null, shipper_id || null, role || null, endpoint, p256dh, auth);
+    }
+
+    res.json({ success: true, message: 'Đăng ký nhận thông báo đẩy thành công' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/test-push', async (req, res) => {
+  try {
+    const { shipper_id } = req.body;
+    const result = await sendPushNotification({
+      shipperId: shipper_id || null,
+      title: '🔔 THỬ NGHIỆM CHUÔNG BÁO ROSI',
+      body: 'Chúc mừng! Điện thoại đã kết nối nhận chuông báo và thông báo màn hình khóa thành công!',
+      url: '/?tab=driver-trips'
+    });
+    res.json({ success: true, result });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -361,6 +474,26 @@ app.post('/api/orders', (req, res) => {
     );
 
     const newOrder = db.prepare('SELECT * FROM orders WHERE id = ?').get(result.lastInsertRowid);
+
+    // GỬI THÔNG BÁO ĐẨY TỚI ĐIỆN THOẠI TÀI XẾ (MÀN HÌNH KHÓA & TẮT MÀN HÌNH)
+    if (shipper_id) {
+      sendPushNotification({
+        shipperId: shipper_id,
+        title: '⚡ BẠN ĐƯỢC CHỈ ĐỊNH CUỐC XE (ROSI)',
+        body: `Đơn ${order_code}: Điểm nhận: ${sender_address} ➔ Giao đến: ${receiver_address} (${dist} km - Cước ${fee.toLocaleString()} đ)`,
+        url: '/?tab=driver-trips',
+        orderId: result.lastInsertRowid
+      });
+    } else {
+      // Bắn thông báo tới toàn bộ tài xế có đơn mới chờ nhận
+      sendPushNotification({
+        title: '📦 CÓ ĐƠN HÀNG MỚI CHỜ NHẬN (ROSI)',
+        body: `Đơn ${order_code}: ${sender_address} ➔ ${receiver_address} (${dist} km - Cước ${fee.toLocaleString()} đ). Nhận ngay!`,
+        url: '/?tab=driver-trips',
+        orderId: result.lastInsertRowid
+      });
+    }
+
     res.json({ success: true, data: newOrder });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -432,6 +565,17 @@ app.put('/api/orders/:id', (req, res) => {
       LEFT JOIN shippers s ON o.shipper_id = s.id
       WHERE o.id = ?
     `).get(id);
+
+    // Gửi thông báo đẩy nếu có gán tài xế mới
+    if (newShipperId && newShipperId !== current.shipper_id) {
+      sendPushNotification({
+        shipperId: newShipperId,
+        title: '⚡ BẠN ĐƯỢC CHỈ ĐỊNH CUỐC XE MỚI (ROSI)',
+        body: `Đơn ${current.order_code}: Điểm nhận: ${current.sender_address} ➔ Giao đến: ${current.receiver_address}. Chạm để nhận đơn!`,
+        url: '/?tab=driver-trips',
+        orderId: id
+      });
+    }
 
     res.json({ success: true, data: updated });
   } catch (error) {

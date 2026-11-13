@@ -209,6 +209,11 @@ function applyLoginSession(role, user) {
     initDriverPortal(user);
   }
 
+  updateNotificationUI();
+  if ('Notification' in window && Notification.permission === 'granted') {
+    requestPushNotificationPermission().catch(() => {});
+  }
+
   lucide.createIcons();
 }
 
@@ -1807,7 +1812,8 @@ async function loadShipperPortalData(isPolling = false) {
       alertBox.classList.remove('hidden');
 
       if (isPolling && assignedOrders.length > previousAssignedCount) {
-        if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+        if ('vibrate' in navigator) navigator.vibrate([300, 100, 300, 100, 300]);
+        playOrderNotificationChime();
       }
     } else {
       if (alertBox) alertBox.classList.add('hidden');
@@ -1979,10 +1985,172 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// =========================================================================
+// WEB PUSH NOTIFICATION & SOUND ENGINE (MÀN HÌNH KHÓA & CHUÔNG KHI TẮT MÁY)
+// =========================================================================
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+function playOrderNotificationChime() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+    const playTone = (freq, start, dur) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.4, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + dur);
+    };
+    const now = ctx.currentTime;
+    playTone(784, now, 0.22);        // G5
+    playTone(1046.5, now + 0.16, 0.35); // C6
+    playTone(1318.5, now + 0.35, 0.55); // E6
+  } catch (e) {
+    console.log('Chime error:', e);
+  }
+}
+
+async function updateNotificationUI() {
+  const statusBadge = document.getElementById('driver-push-badge');
+  const btnText = document.getElementById('btn-enable-push-text');
+  const btn = document.getElementById('btn-enable-push');
+  if (!statusBadge) return;
+
+  if (!('Notification' in window)) {
+    statusBadge.textContent = 'Không hỗ trợ';
+    statusBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200';
+    if (btn) btn.classList.add('hidden');
+    return;
+  }
+
+  if (Notification.permission === 'granted') {
+    statusBadge.textContent = 'Đã bật sẵn sàng';
+    statusBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
+    if (btnText) btnText.textContent = 'ĐÃ BẬT THÔNG BÁO (SẴN SÀNG)';
+    if (btn) {
+      btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+      btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+    }
+  } else if (Notification.permission === 'denied') {
+    statusBadge.textContent = 'Bị chặn';
+    statusBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300';
+    if (btnText) btnText.textContent = 'MỞ CÀI ĐẶT ĐỂ BẬT LẠI';
+  } else {
+    statusBadge.textContent = 'Chưa bật';
+    statusBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200';
+    if (btnText) btnText.textContent = 'BẬT CHUÔNG & MÀN HÌNH KHÓA';
+  }
+}
+
+async function requestPushNotificationPermission() {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      alert('Để nhận chuông báo trên iPhone: Vui lòng bấm biểu tượng Chia Sẻ (Share) ở Safari -> chọn "Thêm vào Màn hình chính", sau đó mở app từ icon màn hình chính.');
+      return false;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      alert('Vui lòng cấp quyền thông báo trong cài đặt để app tự động rung chuông khi có đơn mới!');
+      updateNotificationUI();
+      return false;
+    }
+
+    const reg = await navigator.serviceWorker.ready;
+    const res = await fetch('/api/push-public-key');
+    const data = await res.json();
+    if (!data.success || !data.publicKey) {
+      throw new Error('Không lấy được mã khóa từ máy chủ');
+    }
+
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(data.publicKey)
+      });
+    }
+
+    const subJson = sub.toJSON();
+    const currentUser = appState.currentUser;
+    const shipperId = appState.userRole === 'shipper' && currentUser ? currentUser.id : null;
+    const userId = appState.userRole !== 'shipper' && currentUser ? currentUser.id : null;
+
+    await fetch('/api/push-subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        endpoint: sub.endpoint,
+        p256dh: subJson.keys.p256dh,
+        auth: subJson.keys.auth,
+        shipper_id: shipperId,
+        user_id: userId,
+        role: appState.userRole
+      })
+    });
+
+    playOrderNotificationChime();
+    if ('vibrate' in navigator) navigator.vibrate([300, 100, 300]);
+    updateNotificationUI();
+    showToast('Đã kích hoạt thông báo màn hình khóa & chuông báo thành công!');
+    return true;
+  } catch (err) {
+    console.error('Push registration error:', err);
+    alert('Lỗi đăng ký thông báo: ' + err.message);
+    return false;
+  }
+}
+
+async function testPushNotification() {
+  try {
+    showToast('Đang phát chuông & gửi thông báo thử nghiệm...');
+    playOrderNotificationChime();
+    if ('vibrate' in navigator) navigator.vibrate([300, 100, 300, 100, 400]);
+
+    const shipperId = appState.userRole === 'shipper' && appState.currentUser ? appState.currentUser.id : null;
+    const res = await fetch('/api/test-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shipper_id: shipperId })
+    });
+    const d = await res.json();
+    if (d.success) {
+      showToast('Đã gửi thông báo thử nghiệm đến điện thoại!');
+    }
+  } catch (e) {
+    showToast('Lỗi gửi thử nghiệm: ' + e.message, 'error');
+  }
+}
+
 // PWA Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(err => {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      console.log('SW registered:', reg.scope);
+      // Auto re-subscribe if permission already granted
+      if ('Notification' in window && Notification.permission === 'granted') {
+        requestPushNotificationPermission().catch(() => {});
+      }
+    }).catch(err => {
       console.log('SW registration skipped:', err.message);
     });
   });

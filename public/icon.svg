@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#grad)"/>
+  <g filter="url(#shadow)" transform="translate(64, 64) scale(0.75)">
+    <!-- Package Box -->
+    <path d="M256 40 L450 145 L256 250 L62 145 Z" fill="#facc15" stroke="#ffffff" stroke-width="12" stroke-linejoin="round"/>
+    <path d="M62 145 L256 250 L256 460 L62 355 Z" fill="#eab308" stroke="#ffffff" stroke-width="12" stroke-linejoin="round"/>
+    <path d="M450 145 L256 250 L256 460 L450 355 Z" fill="#ca8a04" stroke="#ffffff" stroke-width="12" stroke-linejoin="round"/>
+    <!-- Express Speed Motion Lines -->
+    <path d="M20 180 L80 180" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+    <path d="M0 220 L70 220" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+    <path d="M30 260 L85 260" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+  </g>
+  <!-- Text ROSI -->
+  <text x="256" y="440" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="52" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="4">ROSI EXPRESS</text>
+</svg>

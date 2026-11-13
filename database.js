@@ -122,6 +122,20 @@ function initDatabase() {
     );
   `);
 
+  // 6. Push Subscriptions for Web Push Notifications (phone lock screen alert)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      shipper_id INTEGER,
+      role TEXT,
+      endpoint TEXT UNIQUE,
+      p256dh TEXT,
+      auth TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   // Default settings fixed for CÔNG TY TNHH ROSI VIỆT NAM (ĐÀ NẴNG)
   const defaultSettings = [
     { key: 'company_name', value: 'CÔNG TY TNHH ROSI VIỆT NAM', description: 'Tên công ty' },
