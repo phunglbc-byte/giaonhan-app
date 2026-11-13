@@ -149,3 +149,35 @@ html, body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
+
+/* =========================================================================
+   RESPONSIVE LAYOUT ENGINE FOR MOBILE PHONE & DESKTOP
+   ========================================================================= */
+
+/* 1. Desktop sidebar: KHÔNG BAO GIỜ HIỆN TRÊN ĐIỆN THOẠI (< 768px) */
+#desktop-sidebar {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  body:not(.role-shipper) #desktop-sidebar {
+    display: flex !important;
+  }
+}
+
+/* 2. Mobile bottom nav: LUÔN HIỆN TRÊN ĐIỆN THOẠI (< 768px) CHO GIÁM ĐỐC / KẾ TOÁN */
+#mobile-nav {
+  display: flex !important;
+}
+
+@media (min-width: 768px) {
+  #mobile-nav {
+    display: none !important;
+  }
+}
+
+/* 3. Khi Tài xế đăng nhập: Ẩn hoàn toàn cả desktop sidebar lẫn mobile nav của sếp */
+body.role-shipper #desktop-sidebar,
+body.role-shipper #mobile-nav {
+  display: none !important;
+}

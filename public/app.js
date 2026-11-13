@@ -181,26 +181,23 @@ function applyLoginSession(role, user) {
 
   const headerName = document.getElementById('header-user-name');
   if (role === 'admin') {
+    document.body.classList.remove('role-shipper');
     headerName.innerHTML = `<span class="hidden sm:inline">👑 Giám Đốc: </span><b class="font-bold text-white truncate max-w-[105px] sm:max-w-none inline-block align-bottom">${user.name}</b>`;
-    document.getElementById('desktop-sidebar').classList.remove('hidden');
-    document.getElementById('mobile-nav').classList.remove('hidden');
     navigateView('dashboard');
     loadShippers();
     loadOrders();
     loadDashboardSummary();
   } else if (role === 'accountant') {
+    document.body.classList.remove('role-shipper');
     headerName.innerHTML = `<span class="hidden sm:inline">📊 Kế Toán: </span><b class="font-bold text-white truncate max-w-[105px] sm:max-w-none inline-block align-bottom">${user.name}</b>`;
-    document.getElementById('desktop-sidebar').classList.remove('hidden');
-    document.getElementById('mobile-nav').classList.remove('hidden');
     navigateView('payroll');
     loadShippers();
     loadOrders();
     loadPayrollData();
   } else {
     // TÀI XẾ: CHỈ ĐƯỢC XEM GIAO DIỆN TÀI XẾ, TUYỆT ĐỐI ẨN TOÀN BỘ THANH ĐIỀU HƯỚNG VÀ DỮ LIỆU CÔNG TY
+    document.body.classList.add('role-shipper');
     headerName.innerHTML = `<span class="hidden sm:inline">🏍️ Tài Xế: </span><b class="font-bold text-white truncate max-w-[105px] sm:max-w-none inline-block align-bottom">${user.name}</b>`;
-    document.getElementById('desktop-sidebar').classList.add('hidden');
-    document.getElementById('mobile-nav').classList.add('hidden');
     
     const mgmtViews = ['dashboard', 'orders', 'route-calc', 'shippers', 'payroll', 'settings'];
     mgmtViews.forEach(v => {
@@ -216,6 +213,7 @@ function applyLoginSession(role, user) {
 }
 
 function handleLogout() {
+  document.body.classList.remove('role-shipper');
   if (driverPollingInterval) {
     clearInterval(driverPollingInterval);
     driverPollingInterval = null;
