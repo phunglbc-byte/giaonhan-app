@@ -557,7 +557,8 @@ function setMapStartPoint(lat, lng, address) {
 
   appState.startMarker = L.marker([lat, lng], { icon: createPinIcon('start', 'A'), draggable: true }).addTo(appState.map);
   appState.calcData.start = { lat, lng, address };
-  document.getElementById('calc-from-coords').textContent = `Tọa độ: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  const coordsEl = document.getElementById('calc-from-coords');
+  if (coordsEl) coordsEl.textContent = `Tọa độ: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   if (address && !address.startsWith('Tọa độ')) {
     document.getElementById('calc-from-address').value = address;
   }
@@ -565,7 +566,8 @@ function setMapStartPoint(lat, lng, address) {
   appState.startMarker.on('dragend', (e) => {
     const pos = e.target.getLatLng();
     appState.calcData.start = { lat: pos.lat, lng: pos.lng, address: `Tọa độ: ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}` };
-    document.getElementById('calc-from-coords').textContent = `Tọa độ: ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
+    const coordsEl = document.getElementById('calc-from-coords');
+    if (coordsEl) coordsEl.textContent = `Tọa độ: ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
     if (appState.endMarker) calculateRouteOnMap();
   });
 }
@@ -575,7 +577,8 @@ function setMapEndPoint(lat, lng, address) {
 
   appState.endMarker = L.marker([lat, lng], { icon: createPinIcon('end', 'B'), draggable: true }).addTo(appState.map);
   appState.calcData.end = { lat, lng, address };
-  document.getElementById('calc-to-coords').textContent = `Tọa độ: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  const coordsToEl = document.getElementById('calc-to-coords');
+  if (coordsToEl) coordsToEl.textContent = `Tọa độ: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   if (address && !address.startsWith('Tọa độ')) {
     document.getElementById('calc-to-address').value = address;
   }
@@ -583,7 +586,8 @@ function setMapEndPoint(lat, lng, address) {
   appState.endMarker.on('dragend', (e) => {
     const pos = e.target.getLatLng();
     appState.calcData.end = { lat: pos.lat, lng: pos.lng, address: `Tọa độ: ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}` };
-    document.getElementById('calc-to-coords').textContent = `Tọa độ: ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
+    const coordsToEl = document.getElementById('calc-to-coords');
+    if (coordsToEl) coordsToEl.textContent = `Tọa độ: ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
     if (appState.startMarker) calculateRouteOnMap();
   });
 }
